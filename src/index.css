@@ -8,50 +8,66 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Brand Colors - Elegant Fashion Theme */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 345 8% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 345 8% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 345 8% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 345 85% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 345 85% 60%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 320 15% 95%;
+    --secondary-foreground: 345 8% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 320 10% 97%;
+    --muted-foreground: 345 8% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 160 60% 85%;
+    --accent-foreground: 345 8% 25%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 320 15% 92%;
+    --input: 320 15% 94%;
+    --ring: 345 85% 65%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Fashion-specific colors */
+    --rose-gold: 15 75% 75%;
+    --soft-pink: 320 50% 95%;
+    --sage-green: 160 30% 80%;
+    --warm-beige: 30 25% 92%;
+    --charcoal: 345 8% 20%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--rose-gold)) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--soft-pink)) 100%);
+    --gradient-accent: linear-gradient(45deg, hsl(var(--accent)) 0%, hsl(var(--sage-green)) 100%);
+
+    /* Shadows */
+    --shadow-elegant: 0 4px 20px hsla(345, 15%, 15%, 0.08);
+    --shadow-card: 0 2px 12px hsla(345, 15%, 15%, 0.06);
+    --shadow-button: 0 2px 8px hsla(var(--primary), 0.2);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
