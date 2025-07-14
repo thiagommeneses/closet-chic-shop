@@ -15,6 +15,7 @@ import { AdminProducts } from "./pages/admin/AdminProducts";
 import { ProductForm } from "./pages/admin/ProductForm";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminSettings } from "./pages/admin/AdminSettings";
+import { FirstTimeSetup } from "./pages/admin/FirstTimeSetup";
 
 const queryClient = new QueryClient();
 
@@ -31,13 +32,14 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               
               {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/products" element={<AdminProducts />} />
-              <Route path="/admin/products/new" element={<ProductForm />} />
-              <Route path="/admin/products/:id/edit" element={<ProductForm />} />
-              <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/setup" element={<FirstTimeSetup />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/products/new" element={<ProductForm />} />
+            <Route path="/admin/products/:id/edit" element={<ProductForm />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

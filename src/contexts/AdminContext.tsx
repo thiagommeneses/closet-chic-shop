@@ -7,6 +7,7 @@ interface AdminContextType {
   session: Session | null;
   isAdmin: boolean;
   loading: boolean;
+  hasAnyAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -18,8 +19,15 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasAnyAdmin, setHasAnyAdmin] = useState(false);
 
   useEffect(() => {
+    // Check if any admin exists first
+    const checkAnyAdmin = async () => {
+      const { data } = await supabase.rpc('has_any_admin');
+      setHasAnyAdmin(!!data);
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -45,9 +53,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Check if any admin exists
+      await checkAnyAdmin();
       
       if (session?.user) {
         supabase
@@ -86,6 +97,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       session,
       isAdmin,
       loading,
+      hasAnyAdmin,
       signIn,
       signOut,
     }}>

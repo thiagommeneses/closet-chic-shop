@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Store } from 'lucide-react';
 
 export const AdminLogin = () => {
-  const { isAdmin, signIn, loading } = useAdmin();
+  const { isAdmin, signIn, loading, hasAnyAdmin } = useAdmin();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +21,10 @@ export const AdminLogin = () => {
         <div className="animate-pulse">Carregando...</div>
       </div>
     );
+  }
+
+  if (!hasAnyAdmin) {
+    return <Navigate to="/admin/setup" replace />;
   }
 
   if (isAdmin) {
