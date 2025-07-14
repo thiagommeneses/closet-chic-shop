@@ -1,147 +1,216 @@
-import { useState } from 'react';
-import { Truck, Calculator } from 'lucide-react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import InputMask from 'react-input-mask';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Truck, Package, Clock, MapPin, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ShippingOption {
-  id: string;
-  name: string;
-  price: number;
-  days: string;
-  description: string;
+  servico: string;
+  servicoNome: string;
+  valor: number;
+  prazoEntrega: number;
+  erro?: string;
 }
 
-export const ShippingCalculator = () => {
-  const [cep, setCep] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
-  const [error, setError] = useState('');
+interface ShippingCalculatorProps {
+  onShippingSelect?: (option: ShippingOption) => void;
+  totalWeight?: number;
+  dimensions?: {
+    comprimento: number;
+    altura: number;
+    largura: number;
+  };
+}
 
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+export const ShippingCalculator: React.FC<ShippingCalculatorProps> = ({
+  onShippingSelect,
+  totalWeight = 500, // peso padrão em gramas
+  dimensions = { comprimento: 20, altura: 10, largura: 15 } // dimensões padrão em cm
+}) => {
+  const [cep, setCep] = useState('');
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedOption, setSelectedOption] = useState<ShippingOption | null>(null);
+  const [endereco, setEndereco] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const formatCep = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 8) {
+      return numbers.replace(/(\d{5})(\d{1,3})/, '$1-$2');
+    }
+    return numbers.slice(0, 8).replace(/(\d{5})(\d{3})/, '$1-$2');
   };
 
   const calculateShipping = async () => {
-    if (!cep || cep.replace(/\D/g, '').length !== 8) {
-      setError('CEP inválido. Digite um CEP válido.');
+    if (!cep || cep.length < 9) {
+      toast({
+        variant: "destructive",
+        title: "CEP inválido",
+        description: "Por favor, insira um CEP válido"
+      });
       return;
     }
 
-    setLoading(true);
-    setError('');
-
+    setIsLoading(true);
     try {
-      // Simulate API call - In real implementation, integrate with Correios API or shipping service
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock shipping options
-      const mockOptions: ShippingOption[] = [
-        {
-          id: 'sedex',
-          name: 'SEDEX',
-          price: 24.90,
-          days: '1-2',
-          description: 'Entrega rápida'
-        },
-        {
-          id: 'pac',
-          name: 'PAC',
-          price: 15.90,
-          days: '3-5',
-          description: 'Entrega econômica'
-        },
-        {
-          id: 'express',
-          name: 'Entrega Expressa',
-          price: 39.90,
-          days: '1',
-          description: 'Entrega no mesmo dia (regiões selecionadas)'
+      const { data, error } = await supabase.functions.invoke('calculate-shipping', {
+        body: {
+          cepDestino: cep,
+          peso: totalWeight,
+          comprimento: dimensions.comprimento,
+          altura: dimensions.altura,
+          largura: dimensions.largura
         }
-      ];
+      });
 
-      setShippingOptions(mockOptions);
-    } catch (err) {
-      setError('Erro ao calcular frete. Tente novamente.');
+      if (error) {
+        throw error;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erro ao calcular frete');
+      }
+
+      setShippingOptions(data.opcoes);
+      setEndereco(data.endereco);
+      setSelectedOption(null);
+
+      toast({
+        title: "Frete calculado!",
+        description: `Opções de envio para ${data.endereco.cidade}/${data.endereco.uf}`
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao calcular frete:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao calcular frete",
+        description: error.message || "Tente novamente mais tarde"
+      });
+      setShippingOptions([]);
+      setEndereco(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
+  const handleSelectOption = (option: ShippingOption) => {
+    setSelectedOption(option);
+    onShippingSelect?.(option);
+  };
+
   return (
-    <Card className="p-4 space-y-4">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Truck className="h-4 w-4 text-primary" />
-        Calcular Frete e Prazo
-      </div>
-
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <InputMask
-            mask="99999-999"
-            value={cep}
-            onChange={(e) => setCep(e.target.value)}
-            disabled={loading}
-          >
-            {(inputProps: any) => (
-              <Input
-                {...inputProps}
-                placeholder="Digite seu CEP"
-                className="text-sm"
-              />
-            )}
-          </InputMask>
-        </div>
-        <Button
-          onClick={calculateShipping}
-          disabled={loading || !cep}
-          size="sm"
-          variant="minimal"
-        >
-          {loading ? (
-            <Calculator className="h-4 w-4 animate-spin" />
-          ) : (
-            <Calculator className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
-
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
-
-      {shippingOptions.length > 0 && (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Truck className="h-5 w-5" />
+          Calcular Frete
+        </CardTitle>
+        <CardDescription>
+          Informe seu CEP para calcular o valor e prazo de entrega
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Opções de entrega:</p>
-          {shippingOptions.map((option) => (
-            <div
-              key={option.id}
-              className="flex justify-between items-center p-2 border border-border rounded text-sm hover:bg-muted/50 cursor-pointer transition-colors"
+          <Label htmlFor="cep">CEP de entrega</Label>
+          <div className="flex gap-2">
+            <Input
+              id="cep"
+              type="text"
+              placeholder="00000-000"
+              value={cep}
+              onChange={(e) => setCep(formatCep(e.target.value))}
+              maxLength={9}
+            />
+            <Button 
+              onClick={calculateShipping} 
+              disabled={isLoading}
+              className="whitespace-nowrap"
             >
-              <div>
-                <span className="font-medium">{option.name}</span>
-                <span className="text-muted-foreground ml-2">
-                  {option.days} dia{option.days !== '1' ? 's' : ''} útil{option.days !== '1' ? 'is' : ''}
-                </span>
-                <div className="text-xs text-muted-foreground">
-                  {option.description}
-                </div>
-              </div>
-              <span className="font-semibold text-primary">
-                {option.price === 0 ? 'GRÁTIS' : formatPrice(option.price)}
-              </span>
-            </div>
-          ))}
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Calculando...
+                </>
+              ) : (
+                'Calcular'
+              )}
+            </Button>
+          </div>
         </div>
-      )}
 
-      <p className="text-xs text-muted-foreground">
-        <strong>Frete grátis</strong> para compras acima de R$ 199,00
-      </p>
+        {endereco && (
+          <div className="p-3 bg-muted rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="h-4 w-4" />
+              <span className="font-semibold">Endereço de entrega:</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {endereco.logradouro}, {endereco.bairro}<br />
+              {endereco.cidade}/{endereco.uf} - {endereco.cep}
+            </p>
+          </div>
+        )}
+
+        {shippingOptions.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold">Opções de envio:</h3>
+            {shippingOptions.map((option) => (
+              <div
+                key={option.servico}
+                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedOption?.servico === option.servico
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50'
+                }`}
+                onClick={() => handleSelectOption(option)}
+              >
+                {option.erro ? (
+                  <div className="text-destructive">
+                    <strong>{option.servicoNome}</strong> - {option.erro}
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-semibold flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        {option.servicoNome}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {option.prazoEntrega} dia{option.prazoEntrega > 1 ? 's' : ''} útil{option.prazoEntrega > 1 ? 'eis' : ''}
+                      </div>
+                    </div>
+                    <div className="text-lg font-bold">
+                      R$ {option.valor.toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selectedOption && !selectedOption.erro && (
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+            <div className="text-sm font-semibold text-primary">
+              Opção selecionada: {selectedOption.servicoNome}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              R$ {selectedOption.valor.toFixed(2).replace('.', ',')} - {selectedOption.prazoEntrega} dia{selectedOption.prazoEntrega > 1 ? 's' : ''} útil{selectedOption.prazoEntrega > 1 ? 'eis' : ''}
+            </div>
+          </div>
+        )}
+
+        <div className="text-xs text-muted-foreground p-3 bg-muted/50 rounded-lg">
+          <strong>Origem:</strong> Jardim da Penha, Vitória/ES - CEP: 29060-670<br />
+          <strong>Observação:</strong> Prazo de entrega em dias úteis, após postagem
+        </div>
+      </CardContent>
     </Card>
   );
 };
