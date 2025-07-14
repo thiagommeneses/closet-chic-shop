@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { CreditCard, Lock, User, MapPin, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,14 @@ interface PaymentData {
   installments?: number;
 }
 
+interface ShippingOption {
+  servico: string;
+  servicoNome: string;
+  valor: number;
+  prazoEntrega: number;
+  erro?: string;
+}
+
 export const CheckoutForm = () => {
   const { state, totalPrice } = useCart();
   const [customerData, setCustomerData] = useState<CustomerData>({
@@ -58,7 +66,35 @@ export const CheckoutForm = () => {
     method: 'credit_card',
     installments: 1
   });
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Calcular peso total e dimensões médias dos produtos no carrinho
+  const cartData = useMemo(() => {
+    const totalWeight = state.items.reduce((total, item) => {
+      // Peso padrão por produto (500g), multiplicado pela quantidade
+      const weight = 500; // Valor padrão até termos peso nos produtos
+      return total + (weight * item.quantity);
+    }, 0);
+
+    // Dimensões médias baseadas nos produtos (valores padrão)
+    const avgDimensions = {
+      comprimento: 25,
+      altura: 10,
+      largura: 20
+    };
+
+    return {
+      totalWeight,
+      dimensions: avgDimensions
+    };
+  }, [state.items]);
+
+  // Calcular total com frete
+  const totalWithShipping = useMemo(() => {
+    const shipping = selectedShipping ? selectedShipping.valor : 0;
+    return totalPrice + shipping;
+  }, [totalPrice, selectedShipping]);
 
   const formatPrice = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -88,13 +124,13 @@ export const CheckoutForm = () => {
   };
 
   const generateInstallmentOptions = () => {
-    const maxInstallments = Math.min(12, Math.floor(totalPrice / 20)); // Min R$20 per installment
+    const maxInstallments = Math.min(12, Math.floor(totalWithShipping / 20)); // Min R$20 per installment
     const options = [];
     
     for (let i = 1; i <= maxInstallments; i++) {
-      const installmentValue = totalPrice / i;
+      const installmentValue = totalWithShipping / i;
       const label = i === 1 
-        ? `À vista - ${formatPrice(totalPrice)}`
+        ? `À vista - ${formatPrice(totalWithShipping)}`
         : `${i}x de ${formatPrice(installmentValue)} ${i <= 3 ? 'sem juros' : 'com juros'}`;
       
       options.push({ value: i, label });
@@ -149,15 +185,24 @@ export const CheckoutForm = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Frete</span>
-                  <span>A calcular</span>
+                  <span>
+                    {selectedShipping 
+                      ? formatPrice(selectedShipping.valor) 
+                      : 'A calcular'
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>{formatPrice(totalPrice)}</span>
+                  <span>{formatPrice(totalWithShipping)}</span>
                 </div>
               </div>
 
-              <ShippingCalculator />
+              <ShippingCalculator 
+                onShippingSelect={setSelectedShipping}
+                totalWeight={cartData.totalWeight}
+                dimensions={cartData.dimensions}
+              />
             </CardContent>
           </Card>
         </div>
@@ -381,7 +426,7 @@ export const CheckoutForm = () => {
                         </p>
                       </div>
                       <p className="text-sm">
-                        <strong>Valor:</strong> {formatPrice(totalPrice)}
+                        <strong>Valor:</strong> {formatPrice(totalWithShipping)}
                       </p>
                     </div>
                   </TabsContent>
@@ -396,7 +441,7 @@ export const CheckoutForm = () => {
                         </p>
                       </div>
                       <p className="text-sm">
-                        <strong>Valor:</strong> {formatPrice(totalPrice)}
+                        <strong>Valor:</strong> {formatPrice(totalWithShipping)}
                       </p>
                     </div>
                   </TabsContent>
@@ -422,7 +467,7 @@ export const CheckoutForm = () => {
                   Processando...
                 </>
               ) : (
-                `Finalizar Compra - ${formatPrice(totalPrice)}`
+                `Finalizar Compra - ${formatPrice(totalWithShipping)}`
               )}
             </Button>
           </form>

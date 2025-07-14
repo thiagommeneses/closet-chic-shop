@@ -132,8 +132,10 @@ export type Database = {
           created_at: string
           description: string | null
           featured: boolean | null
+          height_cm: number | null
           id: string
           images: string[] | null
+          length_cm: number | null
           name: string
           price: number
           sale_price: number | null
@@ -142,6 +144,8 @@ export type Database = {
           stock_quantity: number | null
           tags: string[] | null
           updated_at: string
+          weight_grams: number | null
+          width_cm: number | null
         }
         Insert: {
           active?: boolean | null
@@ -149,8 +153,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           featured?: boolean | null
+          height_cm?: number | null
           id?: string
           images?: string[] | null
+          length_cm?: number | null
           name: string
           price: number
           sale_price?: number | null
@@ -159,6 +165,8 @@ export type Database = {
           stock_quantity?: number | null
           tags?: string[] | null
           updated_at?: string
+          weight_grams?: number | null
+          width_cm?: number | null
         }
         Update: {
           active?: boolean | null
@@ -166,8 +174,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           featured?: boolean | null
+          height_cm?: number | null
           id?: string
           images?: string[] | null
+          length_cm?: number | null
           name?: string
           price?: number
           sale_price?: number | null
@@ -176,6 +186,8 @@ export type Database = {
           stock_quantity?: number | null
           tags?: string[] | null
           updated_at?: string
+          weight_grams?: number | null
+          width_cm?: number | null
         }
         Relationships: [
           {
