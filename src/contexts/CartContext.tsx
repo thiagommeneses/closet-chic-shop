@@ -25,10 +25,27 @@ type CartAction =
   | { type: 'OPEN_CART' }
   | { type: 'CLOSE_CART' };
 
-const initialState: CartState = {
-  items: [],
-  isOpen: false,
+// Função para carregar estado do localStorage
+const loadCartFromStorage = (): CartState => {
+  try {
+    const storedCart = localStorage.getItem('cart');
+    if (storedCart) {
+      const parsed = JSON.parse(storedCart);
+      return {
+        items: Array.isArray(parsed.items) ? parsed.items : [],
+        isOpen: false,
+      };
+    }
+  } catch (error) {
+    console.error('Erro ao carregar carrinho do localStorage:', error);
+  }
+  return {
+    items: [],
+    isOpen: false,
+  };
 };
+
+const initialState: CartState = loadCartFromStorage();
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
@@ -121,6 +138,15 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+
+  // Salvar no localStorage sempre que o carrinho mudar
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('cart', JSON.stringify({ items: state.items }));
+    } catch (error) {
+      console.error('Erro ao salvar carrinho no localStorage:', error);
+    }
+  }, [state.items]);
 
   const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     dispatch({ type: 'ADD_ITEM', payload: item });

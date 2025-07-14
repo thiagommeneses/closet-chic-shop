@@ -72,8 +72,46 @@ serve(async (req) => {
           prazo = 5;
         }
 
-        // Ajustar preço baseado na distância (simulação)
-        const distanceFactor = cepDestinoLimpo.startsWith("29") ? 1 : 1.5;
+        // Ajustar preço baseado na região (simulação mais realista)
+        let distanceFactor = 1;
+        const ufDestino = viaCepData.uf;
+        
+        // Fator baseado na região de destino
+        switch (ufDestino) {
+          case 'ES': // Mesmo estado
+            distanceFactor = 1;
+            break;
+          case 'RJ':
+          case 'MG':
+          case 'BA': // Estados próximos
+            distanceFactor = 1.3;
+            break;
+          case 'SP':
+          case 'PR':
+          case 'SC':
+          case 'RS': // Sudeste/Sul
+            distanceFactor = 1.6;
+            break;
+          case 'GO',
+          case 'MT',
+          case 'MS',
+          case 'DF': // Centro-Oeste
+            distanceFactor = 1.8;
+            break;
+          case 'CE',
+          case 'PE',
+          case 'AL',
+          case 'SE',
+          case 'PB',
+          case 'RN',
+          case 'PI',
+          case 'MA': // Nordeste
+            distanceFactor = 2.2;
+            break;
+          default: // Norte
+            distanceFactor = 2.5;
+        }
+        
         valor = Math.round(valor * distanceFactor * 100) / 100;
 
         shippingOptions.push({
