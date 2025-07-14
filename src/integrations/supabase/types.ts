@@ -68,6 +68,39 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          cpf: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          pagarme_customer_id: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          pagarme_customer_id?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          pagarme_customer_id?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -124,6 +157,81 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          boleto_barcode: string | null
+          boleto_url: string | null
+          card_brand: string | null
+          card_last_digits: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          installments: number | null
+          order_id: string | null
+          pagarme_transaction_id: string | null
+          paid_at: string | null
+          payment_method: string
+          pix_qr_code: string | null
+          pix_qr_code_url: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          boleto_barcode?: string | null
+          boleto_url?: string | null
+          card_brand?: string | null
+          card_last_digits?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          installments?: number | null
+          order_id?: string | null
+          pagarme_transaction_id?: string | null
+          paid_at?: string | null
+          payment_method: string
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          boleto_barcode?: string | null
+          boleto_url?: string | null
+          card_brand?: string | null
+          card_last_digits?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          installments?: number | null
+          order_id?: string | null
+          pagarme_transaction_id?: string | null
+          paid_at?: string | null
+          payment_method?: string
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {

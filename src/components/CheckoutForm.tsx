@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { ShippingCalculator } from './ShippingCalculator';
+import { PaymentResult } from './PaymentResult';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import InputMask from 'react-input-mask';
 
 interface CustomerData {
@@ -68,6 +71,7 @@ export const CheckoutForm = () => {
   });
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentResult, setPaymentResult] = useState<any>(null);
 
   // Calcular peso total e dimensões médias dos produtos no carrinho
   const cartData = useMemo(() => {
@@ -105,19 +109,60 @@ export const CheckoutForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!selectedShipping) {
+      toast({
+        title: 'Frete obrigatório',
+        description: 'Por favor, calcule o frete antes de finalizar a compra.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (paymentData.method === 'credit_card' && (!paymentData.cardNumber || !paymentData.cardName || !paymentData.cardExpiry || !paymentData.cardCvv)) {
+      toast({
+        title: 'Dados do cartão incompletos',
+        description: 'Por favor, preencha todos os dados do cartão.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // In real implementation, integrate with Pagar.me API
-      console.log('Payment data:', { customerData, addressData, paymentData });
-      
-      alert('Pedido realizado com sucesso!');
-    } catch (error) {
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          customerData,
+          addressData,
+          paymentData,
+          cartItems: state.items,
+          shippingCost: selectedShipping.valor,
+          totalAmount: totalWithShipping
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        setPaymentResult(data);
+        toast({
+          title: 'Pedido criado com sucesso!',
+          description: `Pedido #${data.order_id.slice(0, 8)} foi processado.`,
+        });
+      } else {
+        throw new Error(data.message || 'Erro ao processar pagamento');
+      }
+    } catch (error: any) {
       console.error('Payment error:', error);
-      alert('Erro ao processar pagamento. Tente novamente.');
+      toast({
+        title: 'Erro no pagamento',
+        description: error.message || 'Não foi possível processar seu pagamento. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -148,8 +193,16 @@ export const CheckoutForm = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Finalizar Compra</h1>
+    <>
+      {paymentResult && (
+        <PaymentResult 
+          result={paymentResult} 
+          onClose={() => setPaymentResult(null)} 
+        />
+      )}
+      
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Finalizar Compra</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Order Summary */}
@@ -475,5 +528,6 @@ export const CheckoutForm = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

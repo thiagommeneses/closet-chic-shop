@@ -53,3 +53,12 @@ enabled = false
 port = 54327
 vector_port = 54328
 backend = "postgres"
+
+[functions.calculate-shipping]
+verify_jwt = false
+
+[functions.create-payment]
+verify_jwt = false
+
+[functions.pagarme-webhook]
+verify_jwt = false
