@@ -197,13 +197,7 @@ serve(async (req) => {
             number: requestData.customerData.cpf.replace(/\D/g, '')
           }
         ],
-        phones: {
-          mobile_phone: {
-            country_code: '55',
-            area_code: requestData.customerData.phone.replace(/\D/g, '').substring(0, 2),
-            number: requestData.customerData.phone.replace(/\D/g, '').substring(2)
-          }
-        }
+        phone_numbers: [`+55${requestData.customerData.phone.replace(/\D/g, '')}`]
       },
       billing: {
         name: requestData.customerData.name,
@@ -215,13 +209,13 @@ serve(async (req) => {
           street: requestData.addressData.street,
           street_number: requestData.addressData.number,
           zipcode: requestData.addressData.cep.replace(/\D/g, ''),
-          ...(requestData.addressData.complement && { complement: requestData.addressData.complement })
+          ...(requestData.addressData.complement && { complementary: requestData.addressData.complement })
         }
       },
       shipping: {
         name: requestData.customerData.name,
         fee: Math.round(requestData.shippingCost * 100),
-        delivery_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        delivery_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         expedited: false,
         address: {
           country: 'br',
@@ -231,7 +225,7 @@ serve(async (req) => {
           street: requestData.addressData.street,
           street_number: requestData.addressData.number,
           zipcode: requestData.addressData.cep.replace(/\D/g, ''),
-          ...(requestData.addressData.complement && { complement: requestData.addressData.complement })
+          ...(requestData.addressData.complement && { complementary: requestData.addressData.complement })
         }
       },
       items: requestData.cartItems.map(item => ({
@@ -267,8 +261,8 @@ serve(async (req) => {
 
     console.log('Sending request to Pagar.me...');
 
-    // Make request to Pagar.me
-    const pagarmeResponse = await fetch('https://api.pagar.me/core/v5/transactions', {
+    // Make request to Pagar.me - Using correct API v1 endpoint
+    const pagarmeResponse = await fetch('https://api.pagar.me/1/transactions', {
       method: 'POST',
       headers: {
         'Authorization': `Basic ${btoa(pagarmeApiKey + ':')}`,
