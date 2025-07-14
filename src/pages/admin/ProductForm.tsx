@@ -30,6 +30,10 @@ interface ProductFormData {
   featured: boolean;
   active: boolean;
   images: string[];
+  weight_grams: string;
+  length_cm: string;
+  width_cm: string;
+  height_cm: string;
 }
 
 export const ProductForm = () => {
@@ -54,7 +58,11 @@ export const ProductForm = () => {
     tags: '',
     featured: false,
     active: true,
-    images: []
+    images: [],
+    weight_grams: '500',
+    length_cm: '20',
+    width_cm: '15',
+    height_cm: '10'
   });
 
   useEffect(() => {
@@ -104,7 +112,11 @@ export const ProductForm = () => {
         tags: data.tags?.join(', ') || '',
         featured: data.featured || false,
         active: data.active !== false,
-        images: data.images || []
+        images: data.images || [],
+        weight_grams: data.weight_grams?.toString() || '500',
+        length_cm: data.length_cm?.toString() || '20',
+        width_cm: data.width_cm?.toString() || '15',
+        height_cm: data.height_cm?.toString() || '10'
       });
     } catch (error: any) {
       toast({
@@ -213,7 +225,11 @@ export const ProductForm = () => {
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
         featured: formData.featured,
         active: formData.active,
-        images: formData.images
+        images: formData.images,
+        weight_grams: parseInt(formData.weight_grams) || 500,
+        length_cm: parseInt(formData.length_cm) || 20,
+        width_cm: parseInt(formData.width_cm) || 15,
+        height_cm: parseInt(formData.height_cm) || 10
       };
 
       if (isEditing) {
@@ -392,6 +408,69 @@ export const ProductForm = () => {
                     onChange={(e) => handleInputChange('tags', e.target.value)}
                     placeholder="elegante, festa, premium"
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Shipping & Dimensions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Dimensões e Frete</CardTitle>
+                <CardDescription>
+                  Informações necessárias para cálculo de frete
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="weight_grams">Peso (gramas)</Label>
+                    <Input
+                      id="weight_grams"
+                      type="number"
+                      value={formData.weight_grams}
+                      onChange={(e) => handleInputChange('weight_grams', e.target.value)}
+                      placeholder="500"
+                      min="1"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="length_cm">Comprimento (cm)</Label>
+                    <Input
+                      id="length_cm"
+                      type="number"
+                      value={formData.length_cm}
+                      onChange={(e) => handleInputChange('length_cm', e.target.value)}
+                      placeholder="20"
+                      min="1"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="width_cm">Largura (cm)</Label>
+                    <Input
+                      id="width_cm"
+                      type="number"
+                      value={formData.width_cm}
+                      onChange={(e) => handleInputChange('width_cm', e.target.value)}
+                      placeholder="15"
+                      min="1"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="height_cm">Altura (cm)</Label>
+                    <Input
+                      id="height_cm"
+                      type="number"
+                      value={formData.height_cm}
+                      onChange={(e) => handleInputChange('height_cm', e.target.value)}
+                      placeholder="10"
+                      min="1"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -23,12 +23,14 @@ interface ShippingCalculatorProps {
     altura: number;
     largura: number;
   };
+  cartTotal?: number;
 }
 
 export const ShippingCalculator: React.FC<ShippingCalculatorProps> = ({
   onShippingSelect,
   totalWeight = 500, // peso padrão em gramas
-  dimensions = { comprimento: 20, altura: 10, largura: 15 } // dimensões padrão em cm
+  dimensions = { comprimento: 20, altura: 10, largura: 15 }, // dimensões padrão em cm
+  cartTotal = 0
 }) => {
   const [cep, setCep] = useState('');
   const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
@@ -57,6 +59,27 @@ export const ShippingCalculator: React.FC<ShippingCalculatorProps> = ({
 
     setIsLoading(true);
     try {
+      // Verificar se o pedido tem frete grátis (acima de R$ 400)
+      if (cartTotal >= 400) {
+        const freeShipping: ShippingOption = {
+          servico: "free",
+          servicoNome: "Frete Grátis",
+          valor: 0,
+          prazoEntrega: 7
+        };
+        
+        setShippingOptions([freeShipping]);
+        setSelectedOption(freeShipping);
+        onShippingSelect?.(freeShipping);
+        
+        toast({
+          title: "Frete grátis aplicado!",
+          description: "Pedidos acima de R$ 400,00 têm frete grátis"
+        });
+        
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('calculate-shipping', {
         body: {
           cepDestino: cep,
@@ -208,7 +231,8 @@ export const ShippingCalculator: React.FC<ShippingCalculatorProps> = ({
 
         <div className="text-xs text-muted-foreground p-3 bg-muted/50 rounded-lg">
           <strong>Origem:</strong> Jardim da Penha, Vitória/ES - CEP: 29060-670<br />
-          <strong>Observação:</strong> Prazo de entrega em dias úteis, após postagem
+          <strong>Observação:</strong> Prazo de entrega em dias úteis, após postagem<br />
+          <strong>Frete grátis:</strong> Pedidos acima de R$ 400,00
         </div>
       </CardContent>
     </Card>

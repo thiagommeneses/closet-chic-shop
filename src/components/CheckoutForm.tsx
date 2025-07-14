@@ -202,6 +202,7 @@ export const CheckoutForm = () => {
                 onShippingSelect={setSelectedShipping}
                 totalWeight={cartData.totalWeight}
                 dimensions={cartData.dimensions}
+                cartTotal={totalPrice}
               />
             </CardContent>
           </Card>
