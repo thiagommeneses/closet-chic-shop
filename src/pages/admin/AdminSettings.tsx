@@ -38,9 +38,15 @@ export const AdminSettings = () => {
 
       const settingsMap: Record<string, any> = {};
       data?.forEach((setting: Setting) => {
-        settingsMap[setting.key] = typeof setting.value === 'string' 
-          ? JSON.parse(setting.value) 
-          : setting.value;
+        try {
+          // Try to parse as JSON first, if it fails, use the raw value
+          settingsMap[setting.key] = typeof setting.value === 'string' 
+            ? (setting.value.startsWith('"') ? JSON.parse(setting.value) : setting.value)
+            : setting.value;
+        } catch {
+          // If JSON.parse fails, use the raw value
+          settingsMap[setting.key] = setting.value;
+        }
       });
 
       setSettings(settingsMap);
