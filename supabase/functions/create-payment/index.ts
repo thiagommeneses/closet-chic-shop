@@ -53,42 +53,75 @@ serve(async (req) => {
     );
 
     const requestData: PaymentRequest = await req.json();
+    console.log('=== PAYMENT REQUEST START ===');
     console.log('Payment request received:', { 
       method: requestData.paymentData.method, 
-      amount: requestData.totalAmount 
+      amount: requestData.totalAmount,
+      customerName: requestData.customerData.name,
+      customerEmail: requestData.customerData.email
+    });
+    console.log('Request data structure:', {
+      hasCustomerData: !!requestData.customerData,
+      hasAddressData: !!requestData.addressData,
+      hasPaymentData: !!requestData.paymentData,
+      hasCartItems: !!requestData.cartItems && requestData.cartItems.length > 0
     });
 
     // Validate required fields
+    console.log('=== VALIDATION START ===');
     if (!requestData.customerData?.name || !requestData.customerData?.email) {
+      console.log('Customer data validation failed:', requestData.customerData);
       throw new Error('Dados do cliente incompletos');
     }
 
     if (!requestData.addressData?.cep || !requestData.addressData?.street || !requestData.addressData?.state) {
+      console.log('Address data validation failed:', requestData.addressData);
       throw new Error('Dados de endereço incompletos');
     }
 
     if (requestData.paymentData.method === 'credit_card') {
       if (!requestData.paymentData.cardNumber || !requestData.paymentData.cardName || 
           !requestData.paymentData.cardExpiry || !requestData.paymentData.cardCvv) {
+        console.log('Card data validation failed:', {
+          hasCardNumber: !!requestData.paymentData.cardNumber,
+          hasCardName: !!requestData.paymentData.cardName,
+          hasCardExpiry: !!requestData.paymentData.cardExpiry,
+          hasCardCvv: !!requestData.paymentData.cardCvv
+        });
         throw new Error('Dados do cartão incompletos');
       }
     }
 
+    if (!requestData.cartItems || requestData.cartItems.length === 0) {
+      console.log('Cart items validation failed:', requestData.cartItems);
+      throw new Error('Carrinho vazio');
+    }
+
+    console.log('=== VALIDATION PASSED ===');
+
     // Calculate amount in cents
     const amountInCents = Math.round(requestData.totalAmount * 100);
+    console.log('Amount in cents:', amountInCents);
 
     // Create or get customer
+    console.log('=== CUSTOMER LOOKUP START ===');
     let customer;
-    const { data: existingCustomer } = await supabase
+    const { data: existingCustomer, error: customerError } = await supabase
       .from('customers')
       .select('*')
       .eq('email', requestData.customerData.email)
-      .single();
+      .maybeSingle();
+
+    if (customerError) {
+      console.log('Customer lookup error:', customerError);
+      throw new Error('Erro ao buscar cliente: ' + customerError.message);
+    }
 
     if (existingCustomer) {
+      console.log('Found existing customer:', existingCustomer.id);
       customer = existingCustomer;
       // Update customer data
-      await supabase
+      const { error: updateError } = await supabase
         .from('customers')
         .update({
           name: requestData.customerData.name,
@@ -96,8 +129,14 @@ serve(async (req) => {
           cpf: requestData.customerData.cpf
         })
         .eq('id', customer.id);
+      
+      if (updateError) {
+        console.log('Customer update error:', updateError);
+        throw new Error('Erro ao atualizar cliente: ' + updateError.message);
+      }
     } else {
-      const { data: newCustomer } = await supabase
+      console.log('Creating new customer');
+      const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
         .insert({
           name: requestData.customerData.name,
@@ -107,8 +146,14 @@ serve(async (req) => {
         })
         .select()
         .single();
+      
+      if (insertError) {
+        console.log('Customer insert error:', insertError);
+        throw new Error('Erro ao criar cliente: ' + insertError.message);
+      }
       customer = newCustomer;
     }
+    console.log('Customer operation completed:', customer?.id);
 
     // Create order
     const { data: order } = await supabase

@@ -173,18 +173,26 @@ export const CheckoutForm = () => {
         }
       });
 
+      console.log('Function response:', { data, error });
+
       if (error) {
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Erro na comunicação com o servidor');
       }
 
-      if (data.success) {
+      // Check if the response indicates an error
+      if (data?.error) {
+        throw new Error(data.message || 'Erro no processamento do pagamento');
+      }
+
+      if (data?.success) {
         setPaymentResult(data);
         toast({
           title: 'Pedido criado com sucesso!',
           description: `Pedido #${data.order_id.slice(0, 8)} foi processado.`,
         });
       } else {
-        throw new Error(data.message || 'Erro ao processar pagamento');
+        throw new Error('Resposta inválida do servidor');
       }
     } catch (error: any) {
       console.error('Payment error:', error);
