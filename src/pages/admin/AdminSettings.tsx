@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Store, Truck, CreditCard, BarChart3 } from 'lucide-react';
+import { Save, Store, Truck, CreditCard, BarChart3, Shield, Clock, DollarSign } from 'lucide-react';
 
 interface Setting {
   key: string;
@@ -134,7 +136,18 @@ export const AdminSettings = () => {
     try {
       const formData = new FormData(e.target as HTMLFormElement);
       
-      await updateSetting('pagarme_api_key', formData.get('pagarme_api_key'));
+      await Promise.all([
+        updateSetting('pagarme_api_key', formData.get('pagarme_api_key')),
+        updateSetting('pagarme_public_key', formData.get('pagarme_public_key')),
+        updateSetting('pagarme_environment', formData.get('pagarme_environment')),
+        updateSetting('pagarme_enable_credit_card', formData.get('pagarme_enable_credit_card') === 'on'),
+        updateSetting('pagarme_enable_boleto', formData.get('pagarme_enable_boleto') === 'on'),
+        updateSetting('pagarme_enable_pix', formData.get('pagarme_enable_pix') === 'on'),
+        updateSetting('pagarme_max_installments', parseInt(formData.get('pagarme_max_installments') as string) || 12),
+        updateSetting('pagarme_installment_min_amount', parseFloat(formData.get('pagarme_installment_min_amount') as string) || 30),
+        updateSetting('pagarme_boleto_days_to_expire', parseInt(formData.get('pagarme_boleto_days_to_expire') as string) || 7),
+        updateSetting('pagarme_antifraud_enabled', formData.get('pagarme_antifraud_enabled') === 'on')
+      ]);
 
       toast({
         title: "Configurações de pagamento salvas com sucesso!"
@@ -322,46 +335,206 @@ export const AdminSettings = () => {
 
           {/* Payment Settings */}
           <TabsContent value="payment">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações de Pagamento</CardTitle>
-                <CardDescription>
-                  Configure a integração com o Pagar.me para processar pagamentos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSavePayment} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="pagarme_api_key">Chave da API do Pagar.me</Label>
-                    <Input
-                      id="pagarme_api_key"
-                      name="pagarme_api_key"
-                      type="password"
-                      defaultValue={settings.pagarme_api_key || ''}
-                      placeholder="ak_test_..."
-                    />
-                  </div>
+            <div className="space-y-6">
+              {/* API Configuration */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CreditCard className="h-5 w-5" />
+                    <span>Configuração da API Pagar.me</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Configure suas chaves de API e ambiente do Pagar.me
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSavePayment} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="pagarme_public_key">Chave Pública</Label>
+                        <Input
+                          id="pagarme_public_key"
+                          name="pagarme_public_key"
+                          defaultValue={settings.pagarme_public_key || ''}
+                          placeholder="pk_test_..."
+                        />
+                      </div>
 
-                  <div className="text-sm text-muted-foreground p-4 bg-muted rounded-lg">
-                    <p className="font-medium mb-2">Como obter a chave da API:</p>
-                    <ol className="list-decimal list-inside space-y-1">
-                      <li>Crie uma conta no Pagar.me</li>
-                      <li>Acesse o painel administrativo</li>
-                      <li>Vá até Configurações → API Keys</li>
-                      <li>Copie a chave de teste ou produção</li>
-                    </ol>
-                    <p className="mt-2 text-yellow-600">
-                      ⚠️ Use a chave de teste durante o desenvolvimento
-                    </p>
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pagarme_api_key">Chave Secreta</Label>
+                        <Input
+                          id="pagarme_api_key"
+                          name="pagarme_api_key"
+                          type="password"
+                          defaultValue={settings.pagarme_api_key || ''}
+                          placeholder="sk_test_..."
+                        />
+                      </div>
+                    </div>
 
-                  <Button type="submit" disabled={saving}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {saving ? 'Salvando...' : 'Salvar Configurações de Pagamento'}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                    <div className="space-y-2">
+                      <Label htmlFor="pagarme_environment">Ambiente</Label>
+                      <Select name="pagarme_environment" defaultValue={settings.pagarme_environment || 'test'}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o ambiente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="test">Teste (Sandbox)</SelectItem>
+                          <SelectItem value="live">Produção (Live)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Payment Methods */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Métodos de Pagamento</h3>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="pagarme_enable_credit_card">Cartão de Crédito</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Aceitar pagamentos com cartão de crédito
+                          </p>
+                        </div>
+                        <Switch
+                          id="pagarme_enable_credit_card"
+                          name="pagarme_enable_credit_card"
+                          defaultChecked={settings.pagarme_enable_credit_card !== false}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="pagarme_enable_boleto">Boleto Bancário</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Aceitar pagamentos via boleto bancário
+                          </p>
+                        </div>
+                        <Switch
+                          id="pagarme_enable_boleto"
+                          name="pagarme_enable_boleto"
+                          defaultChecked={settings.pagarme_enable_boleto !== false}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="pagarme_enable_pix">PIX</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Aceitar pagamentos via PIX
+                          </p>
+                        </div>
+                        <Switch
+                          id="pagarme_enable_pix"
+                          name="pagarme_enable_pix"
+                          defaultChecked={settings.pagarme_enable_pix !== false}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Credit Card Settings */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium flex items-center space-x-2">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Configurações de Parcelamento</span>
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="pagarme_max_installments">Máximo de Parcelas</Label>
+                          <Select name="pagarme_max_installments" defaultValue={String(settings.pagarme_max_installments || 12)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map(num => (
+                                <SelectItem key={num} value={String(num)}>{num}x</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="pagarme_installment_min_amount">Valor Mínimo por Parcela (R$)</Label>
+                          <Input
+                            id="pagarme_installment_min_amount"
+                            name="pagarme_installment_min_amount"
+                            type="number"
+                            step="0.01"
+                            defaultValue={settings.pagarme_installment_min_amount || 30}
+                            placeholder="30.00"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Boleto Settings */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium flex items-center space-x-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Configurações de Boleto</span>
+                      </h3>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="pagarme_boleto_days_to_expire">Dias para Vencimento do Boleto</Label>
+                        <Select name="pagarme_boleto_days_to_expire" defaultValue={String(settings.pagarme_boleto_days_to_expire || 7)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 dia</SelectItem>
+                            <SelectItem value="3">3 dias</SelectItem>
+                            <SelectItem value="7">7 dias</SelectItem>
+                            <SelectItem value="15">15 dias</SelectItem>
+                            <SelectItem value="30">30 dias</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Security Settings */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium flex items-center space-x-2">
+                        <Shield className="h-4 w-4" />
+                        <span>Configurações de Segurança</span>
+                      </h3>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="pagarme_antifraud_enabled">Antifraude</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Ativar análise antifraude da Pagar.me
+                          </p>
+                        </div>
+                        <Switch
+                          id="pagarme_antifraud_enabled"
+                          name="pagarme_antifraud_enabled"
+                          defaultChecked={settings.pagarme_antifraud_enabled !== false}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground p-4 bg-muted rounded-lg">
+                      <p className="font-medium mb-2">📋 Como configurar:</p>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>Acesse seu dashboard da Pagar.me</li>
+                        <li>Vá em Configurações → API Keys</li>
+                        <li>Copie a chave pública e secreta</li>
+                        <li>Para produção, altere o ambiente para "Live"</li>
+                      </ol>
+                      <p className="mt-2 text-amber-600">
+                        ⚠️ Em ambiente de teste, use sempre as chaves que começam com "pk_test_" e "sk_test_"
+                      </p>
+                    </div>
+
+                    <Button type="submit" disabled={saving} className="w-full">
+                      <Save className="mr-2 h-4 w-4" />
+                      {saving ? 'Salvando...' : 'Salvar Configurações de Pagamento'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Analytics Settings */}
