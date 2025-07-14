@@ -55,8 +55,10 @@ export const FirstTimeSetup = () => {
         description: "Primeiro administrador criado com sucesso. Faça login para continuar."
       });
 
-      // Redirect to login page
-      window.location.href = '/admin/login';
+      // Redirect to login page after a brief delay
+      setTimeout(() => {
+        window.location.href = '/admin/login';
+      }, 2000);
       
     } catch (error: any) {
       toast({

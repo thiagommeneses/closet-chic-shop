@@ -31,7 +31,12 @@ serve(async (req) => {
     );
 
     // Check if any admin already exists
-    const { data: hasAdmin } = await supabaseAdmin.rpc('has_any_admin');
+    const { data: hasAdmin, error: checkError } = await supabaseAdmin.rpc('has_any_admin');
+    
+    if (checkError) {
+      console.error("Error checking admin existence:", checkError);
+      throw new Error(`Failed to check admin existence: ${checkError.message}`);
+    }
     
     if (hasAdmin) {
       return new Response(JSON.stringify({ 

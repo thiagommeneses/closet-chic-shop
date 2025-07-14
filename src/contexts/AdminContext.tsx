@@ -22,61 +22,92 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [hasAnyAdmin, setHasAnyAdmin] = useState(false);
 
   useEffect(() => {
-    // Check if any admin exists first
+    let mounted = true;
+
     const checkAnyAdmin = async () => {
-      const { data } = await supabase.rpc('has_any_admin');
-      setHasAnyAdmin(!!data);
+      try {
+        const { data, error } = await supabase.rpc('has_any_admin');
+        if (mounted && !error) {
+          setHasAnyAdmin(!!data);
+        }
+      } catch (error) {
+        console.error('Error checking admin existence:', error);
+        if (mounted) {
+          setHasAnyAdmin(false);
+        }
+      }
+    };
+
+    const checkAdminUser = async (userId?: string) => {
+      if (!userId) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const { data: adminUser, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('active', true)
+          .maybeSingle();
+        
+        if (mounted && !error) {
+          setIsAdmin(!!adminUser);
+        }
+      } catch (error) {
+        console.error('Error checking admin user:', error);
+        if (mounted) {
+          setIsAdmin(false);
+        }
+      }
     };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Check if user is admin
-          const { data: adminUser } = await supabase
-            .from('admin_users')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .eq('active', true)
-            .single();
-          
-          setIsAdmin(!!adminUser);
-        } else {
-          setIsAdmin(false);
-        }
-        
+        // Check admin status for new session
+        checkAdminUser(session?.user?.id);
         setLoading(false);
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Check if any admin exists
-      await checkAnyAdmin();
-      
-      if (session?.user) {
-        supabase
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('active', true)
-          .single()
-          .then(({ data: adminUser }) => {
-            setIsAdmin(!!adminUser);
-            setLoading(false);
-          });
-      } else {
+    // Initialize with existing session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Check if any admin exists
+        await checkAnyAdmin();
+        
+        // Check current user admin status
+        await checkAdminUser(session?.user?.id);
+        
         setLoading(false);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
