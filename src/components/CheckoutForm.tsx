@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { CreditCard, Lock, User, MapPin, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/contexts/CartContext';
 import { ShippingCalculator } from './ShippingCalculator';
 import { PaymentResult } from './PaymentResult';
+import { RecaptchaComponent, RecaptchaRef } from './RecaptchaComponent';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import InputMask from 'react-input-mask';
@@ -50,6 +51,7 @@ interface ShippingOption {
 
 export const CheckoutForm = () => {
   const { state, totalPrice } = useCart();
+  const recaptchaRef = useRef<RecaptchaRef>(null);
   const [customerData, setCustomerData] = useState<CustomerData>({
     name: '',
     email: '',
@@ -72,6 +74,7 @@ export const CheckoutForm = () => {
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentResult, setPaymentResult] = useState<any>(null);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
   // Calcular peso total e dimensões médias dos produtos no carrinho
   const cartData = useMemo(() => {
@@ -111,6 +114,24 @@ export const CheckoutForm = () => {
     e.preventDefault();
     
     // Validate required fields
+    if (!customerData.name || !customerData.email || !customerData.phone || !customerData.cpf) {
+      toast({
+        title: 'Dados pessoais incompletos',
+        description: 'Por favor, preencha todos os dados pessoais.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!addressData.cep || !addressData.street || !addressData.number || !addressData.neighborhood || !addressData.city || !addressData.state) {
+      toast({
+        title: 'Endereço incompleto',
+        description: 'Por favor, preencha todos os dados de endereço.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!selectedShipping) {
       toast({
         title: 'Frete obrigatório',
@@ -124,6 +145,15 @@ export const CheckoutForm = () => {
       toast({
         title: 'Dados do cartão incompletos',
         description: 'Por favor, preencha todos os dados do cartão.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!recaptchaToken) {
+      toast({
+        title: 'Verificação de segurança obrigatória',
+        description: 'Por favor, complete a verificação reCAPTCHA.',
         variant: 'destructive',
       });
       return;
@@ -380,15 +410,38 @@ export const CheckoutForm = () => {
                 </div>
                 <div>
                   <Label htmlFor="state">Estado</Label>
-                  <Select onValueChange={(value) => setAddressData(prev => ({ ...prev, state: value }))}>
+                  <Select required value={addressData.state} onValueChange={(value) => setAddressData(prev => ({ ...prev, state: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o estado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="SP">São Paulo</SelectItem>
-                      <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                      <SelectItem value="AC">Acre</SelectItem>
+                      <SelectItem value="AL">Alagoas</SelectItem>
+                      <SelectItem value="AP">Amapá</SelectItem>
+                      <SelectItem value="AM">Amazonas</SelectItem>
+                      <SelectItem value="BA">Bahia</SelectItem>
+                      <SelectItem value="CE">Ceará</SelectItem>
+                      <SelectItem value="DF">Distrito Federal</SelectItem>
+                      <SelectItem value="ES">Espírito Santo</SelectItem>
+                      <SelectItem value="GO">Goiás</SelectItem>
+                      <SelectItem value="MA">Maranhão</SelectItem>
+                      <SelectItem value="MT">Mato Grosso</SelectItem>
+                      <SelectItem value="MS">Mato Grosso do Sul</SelectItem>
                       <SelectItem value="MG">Minas Gerais</SelectItem>
-                      {/* Add more states */}
+                      <SelectItem value="PA">Pará</SelectItem>
+                      <SelectItem value="PB">Paraíba</SelectItem>
+                      <SelectItem value="PR">Paraná</SelectItem>
+                      <SelectItem value="PE">Pernambuco</SelectItem>
+                      <SelectItem value="PI">Piauí</SelectItem>
+                      <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                      <SelectItem value="RN">Rio Grande do Norte</SelectItem>
+                      <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                      <SelectItem value="RO">Rondônia</SelectItem>
+                      <SelectItem value="RR">Roraima</SelectItem>
+                      <SelectItem value="SC">Santa Catarina</SelectItem>
+                      <SelectItem value="SP">São Paulo</SelectItem>
+                      <SelectItem value="SE">Sergipe</SelectItem>
+                      <SelectItem value="TO">Tocantins</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -503,6 +556,25 @@ export const CheckoutForm = () => {
               </CardContent>
             </Card>
 
+            {/* reCAPTCHA */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Verificação de Segurança
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RecaptchaComponent
+                  ref={recaptchaRef}
+                  onVerify={setRecaptchaToken}
+                />
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Complete a verificação acima para prosseguir com a compra
+                </p>
+              </CardContent>
+            </Card>
+
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Lock className="h-4 w-4" />
               Seus dados estão protegidos por criptografia SSL
@@ -513,7 +585,7 @@ export const CheckoutForm = () => {
               size="lg"
               variant="elegant"
               className="w-full"
-              disabled={isProcessing}
+              disabled={isProcessing || !recaptchaToken}
             >
               {isProcessing ? (
                 <>
