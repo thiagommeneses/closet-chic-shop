@@ -57,14 +57,35 @@ export const AdminSettings = () => {
 
   const updateSetting = async (key: string, value: any) => {
     try {
-      const { error } = await supabase
+      // First try to update existing setting
+      const { data: existingSetting } = await supabase
         .from('settings')
-        .upsert({
-          key,
-          value: JSON.stringify(value)
-        });
+        .select('id')
+        .eq('key', key)
+        .single();
 
-      if (error) throw error;
+      if (existingSetting) {
+        // Update existing setting
+        const { error } = await supabase
+          .from('settings')
+          .update({
+            value: JSON.stringify(value),
+            updated_at: new Date().toISOString()
+          })
+          .eq('key', key);
+
+        if (error) throw error;
+      } else {
+        // Insert new setting
+        const { error } = await supabase
+          .from('settings')
+          .insert({
+            key,
+            value: JSON.stringify(value)
+          });
+
+        if (error) throw error;
+      }
 
       setSettings(prev => ({
         ...prev,
