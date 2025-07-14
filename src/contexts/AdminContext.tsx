@@ -10,6 +10,7 @@ interface AdminContextType {
   hasAnyAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  refreshAdminStatus: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -132,6 +133,19 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await supabase.auth.signOut();
   };
 
+  const refreshAdminStatus = async () => {
+    try {
+      console.log('Refreshing admin status...');
+      const { data, error } = await supabase.rpc('has_any_admin');
+      console.log('Refresh has_any_admin result:', { data, error });
+      if (!error) {
+        setHasAnyAdmin(!!data);
+      }
+    } catch (error) {
+      console.error('Error refreshing admin status:', error);
+    }
+  };
+
   return (
     <AdminContext.Provider value={{
       user,
@@ -141,6 +155,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       hasAnyAdmin,
       signIn,
       signOut,
+      refreshAdminStatus,
     }}>
       {children}
     </AdminContext.Provider>

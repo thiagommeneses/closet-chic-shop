@@ -59,13 +59,13 @@ export const FirstTimeSetup = () => {
 
       toast({
         title: "Sucesso!",
-        description: "Primeiro administrador criado com sucesso. Faça login para continuar."
+        description: "Primeiro administrador criado com sucesso. Redirecionando para o login..."
       });
 
-      // Force a page reload to refresh the admin context
+      // Navigate to login page after a brief delay
       setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+        window.location.href = '/admin/login';
+      }, 1500);
       
     } catch (error: any) {
       toast({

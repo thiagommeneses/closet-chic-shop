@@ -9,13 +9,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Store } from 'lucide-react';
 
 export const AdminLogin = () => {
-  const { isAdmin, signIn, loading, hasAnyAdmin } = useAdmin();
+  const { isAdmin, signIn, loading, hasAnyAdmin, refreshAdminStatus } = useAdmin();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   console.log('AdminLogin render - loading:', loading, 'hasAnyAdmin:', hasAnyAdmin, 'isAdmin:', isAdmin);
+
+  // Refresh admin status when component mounts
+  React.useEffect(() => {
+    if (!loading) {
+      refreshAdminStatus();
+    }
+  }, [loading, refreshAdminStatus]);
 
   if (loading) {
     return (
