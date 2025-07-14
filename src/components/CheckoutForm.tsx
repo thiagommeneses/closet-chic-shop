@@ -188,9 +188,21 @@ export const CheckoutForm = () => {
       }
     } catch (error: any) {
       console.error('Payment error:', error);
+      
+      // Parse error response if it's from the API
+      let errorMessage = 'Não foi possível processar seu pagamento. Tente novamente.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Reset recaptcha on error
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
+      
       toast({
         title: 'Erro no pagamento',
-        description: error.message || 'Não foi possível processar seu pagamento. Tente novamente.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

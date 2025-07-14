@@ -58,6 +58,22 @@ serve(async (req) => {
       amount: requestData.totalAmount 
     });
 
+    // Validate required fields
+    if (!requestData.customerData?.name || !requestData.customerData?.email) {
+      throw new Error('Dados do cliente incompletos');
+    }
+
+    if (!requestData.addressData?.cep || !requestData.addressData?.street || !requestData.addressData?.state) {
+      throw new Error('Dados de endereço incompletos');
+    }
+
+    if (requestData.paymentData.method === 'credit_card') {
+      if (!requestData.paymentData.cardNumber || !requestData.paymentData.cardName || 
+          !requestData.paymentData.cardExpiry || !requestData.paymentData.cardCvv) {
+        throw new Error('Dados do cartão incompletos');
+      }
+    }
+
     // Calculate amount in cents
     const amountInCents = Math.round(requestData.totalAmount * 100);
 
@@ -225,8 +241,21 @@ serve(async (req) => {
     });
 
     if (!pagarmeResponse.ok) {
-      console.error('Pagar.me error:', pagarmeData);
-      throw new Error(`Pagar.me API error: ${pagarmeData.message || 'Unknown error'}`);
+      console.error('Pagar.me error details:', {
+        status: pagarmeResponse.status,
+        response: pagarmeData,
+        requestBody: pagarmeRequestBody
+      });
+      
+      // Get more specific error message
+      let errorMessage = 'Erro no processamento do pagamento';
+      if (pagarmeData.errors && Array.isArray(pagarmeData.errors)) {
+        errorMessage = pagarmeData.errors.map((err: any) => err.message).join(', ');
+      } else if (pagarmeData.message) {
+        errorMessage = pagarmeData.message;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     // Create payment record
@@ -306,15 +335,26 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Payment processing error:', error);
+    console.error('Payment processing error:', {
+      error: error.message,
+      stack: error.stack
+    });
+    
+    // Return more detailed error information
+    let errorMessage = 'Erro interno do servidor';
+    if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: true, 
-        message: error.message || 'Internal server error' 
+        message: errorMessage,
+        success: false
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 400, // Changed to 400 for client errors
       }
     );
   }
