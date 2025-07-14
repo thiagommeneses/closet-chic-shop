@@ -62,9 +62,9 @@ export const FirstTimeSetup = () => {
         description: "Primeiro administrador criado com sucesso. Redirecionando para o login..."
       });
 
-      // Navigate to login page after a brief delay
+      // Force a complete page reload to refresh all contexts
       setTimeout(() => {
-        window.location.href = '/admin/login';
+        window.location.replace('/admin/login');
       }, 1500);
       
     } catch (error: any) {
