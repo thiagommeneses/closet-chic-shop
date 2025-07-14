@@ -75,10 +75,26 @@ serve(async (req) => {
     const { error: adminError } = await supabaseAdmin.rpc('make_user_admin', { user_email: email });
     console.log("make_user_admin result:", { adminError });
 
+    if (adminError) {
+      console.error("Error making user admin:", adminError);
+      throw new Error(`Failed to make user admin: ${adminError.message}`);
+    }
+
+    // Double-check that admin was created successfully
+    const { data: verifyAdmin, error: verifyError } = await supabaseAdmin.rpc('has_any_admin');
+    console.log("Admin verification result:", { verifyAdmin, verifyError });
+
+    if (verifyError || !verifyAdmin) {
+      console.error("Failed to verify admin creation");
+      throw new Error("Failed to verify admin creation");
+    }
+
+    console.log("First admin created and verified successfully");
     return new Response(JSON.stringify({ 
       success: true,
       message: "First admin user created successfully",
-      email: email
+      email: email,
+      admin_verified: true
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

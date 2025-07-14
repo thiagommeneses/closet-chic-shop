@@ -11,6 +11,7 @@ interface AdminContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshAdminStatus: () => Promise<void>;
+  forceRefreshAdminStatus: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -24,30 +25,26 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   
   console.log('AdminContext state:', { loading, hasAnyAdmin, isAdmin, user });
 
+  const checkAnyAdmin = async (forceRefresh = false) => {
+    try {
+      console.log('Checking if any admin exists...', forceRefresh ? '(forced)' : '');
+      const { data, error } = await supabase.rpc('has_any_admin');
+      console.log('has_any_admin result:', { data, error });
+      if (!error) {
+        console.log('Setting hasAnyAdmin to:', !!data);
+        setHasAnyAdmin(!!data);
+      } else if (error) {
+        console.error('Error in has_any_admin:', error);
+        setHasAnyAdmin(false);
+      }
+    } catch (error) {
+      console.error('Error checking admin existence:', error);
+      setHasAnyAdmin(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
-
-    const checkAnyAdmin = async () => {
-      try {
-        console.log('Checking if any admin exists...');
-        const { data, error } = await supabase.rpc('has_any_admin');
-        console.log('has_any_admin result:', { data, error });
-        if (mounted && !error) {
-          console.log('Setting hasAnyAdmin to:', !!data);
-          setHasAnyAdmin(!!data);
-        } else if (error) {
-          console.error('Error in has_any_admin:', error);
-          if (mounted) {
-            setHasAnyAdmin(false);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking admin existence:', error);
-        if (mounted) {
-          setHasAnyAdmin(false);
-        }
-      }
-    };
 
     const checkAdminUser = async (userId?: string) => {
       if (!userId) {
@@ -136,13 +133,43 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const refreshAdminStatus = async () => {
     try {
       console.log('Refreshing admin status...');
+      
+      // First, check if any admin exists
       const { data, error } = await supabase.rpc('has_any_admin');
       console.log('Refresh has_any_admin result:', { data, error });
+      
       if (!error) {
         setHasAnyAdmin(!!data);
+        
+        // If there's an admin and we have a current user, check if they're an admin
+        if (data && user?.id) {
+          const { data: adminUser, error: adminError } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('active', true)
+            .maybeSingle();
+          
+          if (!adminError) {
+            setIsAdmin(!!adminUser);
+          }
+        }
       }
     } catch (error) {
       console.error('Error refreshing admin status:', error);
+    }
+  };
+
+  const forceRefreshAdminStatus = async () => {
+    try {
+      console.log('Force refreshing admin status...');
+      
+      // Force refresh by calling checkAnyAdmin with force flag
+      await checkAnyAdmin(true);
+      
+      console.log('Forced admin status update completed');
+    } catch (error) {
+      console.error('Error force refreshing admin status:', error);
     }
   };
 
@@ -156,6 +183,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       signIn,
       signOut,
       refreshAdminStatus,
+      forceRefreshAdminStatus,
     }}>
       {children}
     </AdminContext.Provider>

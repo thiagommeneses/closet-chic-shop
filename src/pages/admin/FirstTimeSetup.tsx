@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Store, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAdmin } from '@/contexts/AdminContext';
 
 export const FirstTimeSetup = () => {
   const { toast } = useToast();
+  const { forceRefreshAdminStatus } = useAdmin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -62,10 +64,13 @@ export const FirstTimeSetup = () => {
         description: "Primeiro administrador criado com sucesso. Redirecionando para o login..."
       });
 
-      // Force a complete page reload to refresh all contexts
+      // Refresh admin status in context
+      await forceRefreshAdminStatus();
+
+      // Wait a bit more to ensure state is updated
       setTimeout(() => {
         window.location.replace('/admin/login');
-      }, 1500);
+      }, 2000);
       
     } catch (error: any) {
       toast({

@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Store } from 'lucide-react';
 
 export const AdminLogin = () => {
-  const { isAdmin, signIn, loading, hasAnyAdmin, refreshAdminStatus } = useAdmin();
+  const { isAdmin, signIn, loading, hasAnyAdmin, refreshAdminStatus, forceRefreshAdminStatus } = useAdmin();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +20,9 @@ export const AdminLogin = () => {
   // Refresh admin status when component mounts
   React.useEffect(() => {
     if (!loading) {
-      refreshAdminStatus();
+      forceRefreshAdminStatus();
     }
-  }, [loading, refreshAdminStatus]);
+  }, [loading, forceRefreshAdminStatus]);
 
   if (loading) {
     return (
