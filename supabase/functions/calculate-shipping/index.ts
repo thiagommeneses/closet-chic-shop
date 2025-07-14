@@ -92,19 +92,19 @@ serve(async (req) => {
           case 'RS': // Sudeste/Sul
             distanceFactor = 1.6;
             break;
-          case 'GO',
-          case 'MT',
-          case 'MS',
+          case 'GO':
+          case 'MT':
+          case 'MS':
           case 'DF': // Centro-Oeste
             distanceFactor = 1.8;
             break;
-          case 'CE',
-          case 'PE',
-          case 'AL',
-          case 'SE',
-          case 'PB',
-          case 'RN',
-          case 'PI',
+          case 'CE':
+          case 'PE':
+          case 'AL':
+          case 'SE':
+          case 'PB':
+          case 'RN':
+          case 'PI':
           case 'MA': // Nordeste
             distanceFactor = 2.2;
             break;
