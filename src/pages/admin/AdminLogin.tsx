@@ -15,6 +15,8 @@ export const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  console.log('AdminLogin render - loading:', loading, 'hasAnyAdmin:', hasAnyAdmin, 'isAdmin:', isAdmin);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -24,6 +26,7 @@ export const AdminLogin = () => {
   }
 
   if (!hasAnyAdmin) {
+    console.log('Redirecting to setup because hasAnyAdmin is false');
     return <Navigate to="/admin/setup" replace />;
   }
 

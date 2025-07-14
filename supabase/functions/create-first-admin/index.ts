@@ -13,6 +13,7 @@ serve(async (req) => {
 
   try {
     const { email, password } = await req.json();
+    console.log("Received request to create admin:", { email: email, passwordLength: password?.length });
 
     if (!email || !password) {
       throw new Error("Email and password are required");
@@ -31,7 +32,9 @@ serve(async (req) => {
     );
 
     // Check if any admin already exists
+    console.log("Checking if any admin exists...");
     const { data: hasAdmin, error: checkError } = await supabaseAdmin.rpc('has_any_admin');
+    console.log("has_any_admin result:", { hasAdmin, checkError });
     
     if (checkError) {
       console.error("Error checking admin existence:", checkError);
@@ -39,6 +42,7 @@ serve(async (req) => {
     }
     
     if (hasAdmin) {
+      console.log("Admin already exists, returning error");
       return new Response(JSON.stringify({ 
         error: "Admin user already exists" 
       }), {
@@ -48,13 +52,17 @@ serve(async (req) => {
     }
 
     // Create the user
+    console.log("Creating user with email:", email);
     const { data: user, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true
     });
 
+    console.log("User creation result:", { user: user?.user?.id, createError });
+
     if (createError) {
+      console.error("Error creating user:", createError);
       throw createError;
     }
 
@@ -63,7 +71,9 @@ serve(async (req) => {
     }
 
     // Make the user admin
-    await supabaseAdmin.rpc('make_user_admin', { user_email: email });
+    console.log("Making user admin:", user.user.id);
+    const { error: adminError } = await supabaseAdmin.rpc('make_user_admin', { user_email: email });
+    console.log("make_user_admin result:", { adminError });
 
     return new Response(JSON.stringify({ 
       success: true,

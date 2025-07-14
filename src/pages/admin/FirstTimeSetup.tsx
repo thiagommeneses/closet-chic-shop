@@ -13,6 +13,8 @@ export const FirstTimeSetup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  console.log('FirstTimeSetup rendered');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,15 +40,20 @@ export const FirstTimeSetup = () => {
     setIsLoading(true);
 
     try {
+      console.log('Calling create-first-admin function...');
       const { data, error } = await supabase.functions.invoke('create-first-admin', {
         body: { email, password }
       });
 
+      console.log('create-first-admin response:', { data, error });
+
       if (error) {
+        console.error('Function invocation error:', error);
         throw error;
       }
 
       if (data.error) {
+        console.error('Function returned error:', data.error);
         throw new Error(data.error);
       }
 
@@ -55,9 +62,9 @@ export const FirstTimeSetup = () => {
         description: "Primeiro administrador criado com sucesso. Faça login para continuar."
       });
 
-      // Redirect to login page after a brief delay
+      // Force a page reload to refresh the admin context
       setTimeout(() => {
-        window.location.href = '/admin/login';
+        window.location.reload();
       }, 2000);
       
     } catch (error: any) {

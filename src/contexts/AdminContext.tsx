@@ -20,15 +20,25 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasAnyAdmin, setHasAnyAdmin] = useState(false);
+  
+  console.log('AdminContext state:', { loading, hasAnyAdmin, isAdmin, user });
 
   useEffect(() => {
     let mounted = true;
 
     const checkAnyAdmin = async () => {
       try {
+        console.log('Checking if any admin exists...');
         const { data, error } = await supabase.rpc('has_any_admin');
+        console.log('has_any_admin result:', { data, error });
         if (mounted && !error) {
+          console.log('Setting hasAnyAdmin to:', !!data);
           setHasAnyAdmin(!!data);
+        } else if (error) {
+          console.error('Error in has_any_admin:', error);
+          if (mounted) {
+            setHasAnyAdmin(false);
+          }
         }
       } catch (error) {
         console.error('Error checking admin existence:', error);
