@@ -8,7 +8,8 @@ import {
   ShoppingCart, 
   Settings, 
   LogOut,
-  Store
+  Store,
+  FileText
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -41,6 +42,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       icon: Package,
       label: 'Produtos',
       path: '/admin/products'
+    },
+    {
+      icon: FileText,
+      label: 'Detalhes dos Produtos',
+      path: '/admin/product-templates'
     },
     {
       icon: ShoppingCart,

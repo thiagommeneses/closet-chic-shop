@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Ruler, Package, Heart } from 'lucide-react';
 
 interface ProductDetailsTemplate {
   id: string;
@@ -170,13 +171,48 @@ export const AdminProductTemplates = () => {
 
   const getTypeLabel = (type: string) => {
     const types: { [key: string]: string } = {
-      size_guide: 'Guia de Tamanhos',
+      size_guide: 'Guia de Medidas',
       composition: 'Composição',
-      care_instructions: 'Cuidados',
-      shipping: 'Envio',
-      warranty: 'Garantia'
+      care_instructions: 'Cuidados com a Peça'
     };
     return types[type] || type;
+  };
+
+  const getTypeIcon = (type: string) => {
+    const icons: { [key: string]: any } = {
+      size_guide: Ruler,
+      composition: Package,
+      care_instructions: Heart
+    };
+    return icons[type] || FileText;
+  };
+
+  const getExampleContent = (type: string) => {
+    const examples: { [key: string]: string } = {
+      size_guide: `P - Busto: 84-88cm, Cintura: 64-68cm, Quadril: 90-94cm
+M - Busto: 88-92cm, Cintura: 68-72cm, Quadril: 94-98cm
+G - Busto: 92-96cm, Cintura: 72-76cm, Quadril: 98-102cm
+GG - Busto: 96-100cm, Cintura: 76-80cm, Quadril: 102-106cm`,
+      composition: `95% Algodão
+5% Elastano
+
+Tecido: Jersey
+Peso: 180g/m²
+Origem: Brasil`,
+      care_instructions: `• Lavar à máquina em água fria (até 30°C)
+• Não usar alvejante
+• Secar à sombra
+• Passar com ferro morno
+• Não usar secadora
+• Lavar com cores similares`
+    };
+    return examples[type] || '';
+  };
+
+  const templatesByType = {
+    size_guide: templates.filter(t => t.type === 'size_guide'),
+    composition: templates.filter(t => t.type === 'composition'),
+    care_instructions: templates.filter(t => t.type === 'care_instructions')
   };
 
   return (
@@ -184,9 +220,9 @@ export const AdminProductTemplates = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Templates de Detalhes</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Detalhes dos Produtos</h1>
             <p className="text-muted-foreground">
-              Gerencie templates reutilizáveis para detalhes de produtos
+              Configure templates para Guia de Medidas, Composição e Cuidados com a Peça
             </p>
           </div>
           
@@ -215,23 +251,27 @@ export const AdminProductTemplates = () => {
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Ex: Guia de Tamanhos Vestidos"
+                      placeholder="Ex: Guia de Medidas - Vestidos"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="type">Tipo *</Label>
-                    <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+                    <Select value={formData.type} onValueChange={(value) => {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        type: value,
+                        content: getExampleContent(value)
+                      }));
+                    }}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="size_guide">Guia de Tamanhos</SelectItem>
+                        <SelectItem value="size_guide">Guia de Medidas</SelectItem>
                         <SelectItem value="composition">Composição</SelectItem>
-                        <SelectItem value="care_instructions">Cuidados</SelectItem>
-                        <SelectItem value="shipping">Envio</SelectItem>
-                        <SelectItem value="warranty">Garantia</SelectItem>
+                        <SelectItem value="care_instructions">Cuidados com a Peça</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -243,12 +283,12 @@ export const AdminProductTemplates = () => {
                     id="content"
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    placeholder="Digite o conteúdo do template (texto ou JSON)..."
-                    rows={10}
+                    placeholder="Digite o conteúdo do template..."
+                    rows={12}
                     required
                   />
                   <p className="text-sm text-muted-foreground">
-                    Você pode usar texto simples ou JSON para conteúdo estruturado
+                    O conteúdo será exibido na página do produto conforme digitado acima
                   </p>
                 </div>
 
@@ -277,69 +317,107 @@ export const AdminProductTemplates = () => {
           </Dialog>
         </div>
 
-        <div className="grid gap-4">
-          {templates.map((template) => (
-            <Card key={template.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
-                      <CardDescription>
-                        {getTypeLabel(template.type)} • {template.active ? 'Ativo' : 'Inativo'}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={template.active ? "default" : "secondary"}>
-                      {template.active ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEdit(template)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(template)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  <strong>Conteúdo:</strong>
-                  <div className="mt-1 p-3 bg-muted rounded-md max-h-32 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-xs">
-                      {typeof template.content === 'string' 
-                        ? template.content 
-                        : JSON.stringify(template.content, null, 2)
-                      }
-                    </pre>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <Tabs defaultValue="size_guide" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="size_guide" className="flex items-center space-x-2">
+              <Ruler className="h-4 w-4" />
+              <span>Guia de Medidas</span>
+            </TabsTrigger>
+            <TabsTrigger value="composition" className="flex items-center space-x-2">
+              <Package className="h-4 w-4" />
+              <span>Composição</span>
+            </TabsTrigger>
+            <TabsTrigger value="care_instructions" className="flex items-center space-x-2">
+              <Heart className="h-4 w-4" />
+              <span>Cuidados</span>
+            </TabsTrigger>
+          </TabsList>
 
-          {templates.length === 0 && (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhum template encontrado</p>
-                  <p className="text-sm">Clique em "Novo Template" para criar o primeiro template</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          {Object.entries(templatesByType).map(([type, typeTemplates]) => (
+            <TabsContent key={type} value={type} className="space-y-4">
+              <div className="grid gap-4">
+                {typeTemplates.map((template) => {
+                  const Icon = getTypeIcon(template.type);
+                  return (
+                    <Card key={template.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <CardTitle className="text-lg">{template.name}</CardTitle>
+                              <CardDescription>
+                                {getTypeLabel(template.type)} • {template.active ? 'Ativo' : 'Inativo'}
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={template.active ? "default" : "secondary"}>
+                              {template.active ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(template)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(template)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm">
+                          <div className="p-4 bg-muted rounded-lg">
+                            <div className="whitespace-pre-wrap">
+                              {typeof template.content === 'string' 
+                                ? template.content 
+                                : JSON.stringify(template.content, null, 2)
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                {typeTemplates.length === 0 && (
+                  <Card>
+                    <CardContent className="py-8">
+                      <div className="text-center text-muted-foreground">
+                        {React.createElement(getTypeIcon(type), { className: "h-12 w-12 mx-auto mb-4 opacity-50" })}
+                        <p>Nenhum template de {getTypeLabel(type).toLowerCase()} encontrado</p>
+                        <p className="text-sm mb-4">Clique em "Novo Template" para criar o primeiro template</p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setFormData({
+                              name: '',
+                              type: type,
+                              content: getExampleContent(type),
+                              active: true
+                            });
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Criar Template de {getTypeLabel(type)}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </AdminLayout>
   );
