@@ -45,7 +45,7 @@ export const Cart = () => {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-[calc(100vh-120px)]">
           {state.items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center space-y-4">
               <ShoppingBag className="h-16 w-16 text-muted-foreground" />
@@ -60,7 +60,7 @@ export const Cart = () => {
           ) : (
             <>
               {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto space-y-4 py-6">
+              <div className="flex-1 overflow-y-auto space-y-4 py-6 min-h-0">
                 {state.items.map((item) => (
                   <div key={item.id} className="flex gap-3 p-3 border border-border rounded-lg">
                     <img
@@ -112,7 +112,7 @@ export const Cart = () => {
               </div>
 
               {/* Cart Summary */}
-              <div className="border-t border-border pt-4 space-y-3">
+              <div className="border-t border-border pt-4 pb-6 space-y-3 mt-auto">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
