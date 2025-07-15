@@ -409,7 +409,10 @@ export const ProductForm = () => {
         title: `Produto ${isEditing ? 'atualizado' : 'criado'} com sucesso!`
       });
 
-      navigate('/admin/products');
+      // Only redirect to products list when creating new product
+      if (!isEditing) {
+        navigate('/admin/products');
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
