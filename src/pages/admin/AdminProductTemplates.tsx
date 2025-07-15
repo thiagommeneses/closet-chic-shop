@@ -77,10 +77,20 @@ export const AdminProductTemplates = () => {
 
   const handleEdit = (template: ProductDetailsTemplate) => {
     setEditingTemplate(template);
+    let contentText = '';
+    
+    if (typeof template.content === 'string') {
+      contentText = template.content;
+    } else if (template.content && template.content.text) {
+      contentText = template.content.text;
+    } else {
+      contentText = JSON.stringify(template.content, null, 2);
+    }
+    
     setFormData({
       name: template.name,
       type: template.type,
-      content: typeof template.content === 'string' ? template.content : JSON.stringify(template.content, null, 2),
+      content: contentText,
       active: template.active
     });
     setIsDialogOpen(true);
@@ -192,19 +202,38 @@ export const AdminProductTemplates = () => {
       size_guide: `P - Busto: 84-88cm, Cintura: 64-68cm, Quadril: 90-94cm
 M - Busto: 88-92cm, Cintura: 68-72cm, Quadril: 94-98cm
 G - Busto: 92-96cm, Cintura: 72-76cm, Quadril: 98-102cm
-GG - Busto: 96-100cm, Cintura: 76-80cm, Quadril: 102-106cm`,
+GG - Busto: 96-100cm, Cintura: 76-80cm, Quadril: 102-106cm
+
+Como tirar suas medidas:
+• Busto: Meça na parte mais larga do busto
+• Cintura: Meça na parte mais fina da cintura
+• Quadril: Meça na parte mais larga do quadril
+
+Dica: Use uma fita métrica e mantenha o corpo relaxado durante as medições.`,
       composition: `95% Algodão
 5% Elastano
 
 Tecido: Jersey
 Peso: 180g/m²
-Origem: Brasil`,
+Origem: Brasil
+
+Características:
+• Tecido macio e confortável
+• Boa elasticidade
+• Respirável
+• Fácil de cuidar`,
       care_instructions: `• Lavar à máquina em água fria (até 30°C)
 • Não usar alvejante
 • Secar à sombra
 • Passar com ferro morno
 • Não usar secadora
-• Lavar com cores similares`
+• Lavar com cores similares
+
+Dicas importantes:
+• Vire a peça do avesso antes de lavar
+• Não torça a peça ao escorrer
+• Evite exposição direta ao sol
+• Guarde em local seco e arejado`
     };
     return examples[type] || '';
   };
@@ -378,7 +407,7 @@ Origem: Brasil`,
                             <div className="whitespace-pre-wrap">
                               {typeof template.content === 'string' 
                                 ? template.content 
-                                : JSON.stringify(template.content, null, 2)
+                                : template.content?.text || JSON.stringify(template.content, null, 2)
                               }
                             </div>
                           </div>
