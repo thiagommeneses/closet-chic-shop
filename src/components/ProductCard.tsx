@@ -3,6 +3,7 @@ import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductCardProps {
   id: number | string;
@@ -14,6 +15,7 @@ interface ProductCardProps {
   isOnSale?: boolean;
   discount?: number;
   className?: string;
+  slug?: string;
 }
 
 export const ProductCard = ({ 
@@ -25,11 +27,13 @@ export const ProductCard = ({
   isNew, 
   isOnSale, 
   discount,
-  className = ""
+  className = "",
+  slug
 }: ProductCardProps) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const { addItem, openCart } = useCart();
+  const navigate = useNavigate();
 
   const handleAddToCart = () => {
     const imageUrl = Array.isArray(image) ? image[0] : image;
@@ -108,6 +112,7 @@ export const ProductCard = ({
             variant="minimal"
             size="icon"
             className="bg-white/90 hover:bg-white"
+            onClick={() => slug && navigate(`/produto/${slug}`)}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -116,7 +121,10 @@ export const ProductCard = ({
 
       {/* Product Info */}
       <div className="p-4 space-y-2">
-        <h3 className="font-medium text-foreground group-hover:text-primary transition-colors duration-300 line-clamp-2">
+        <h3 
+          className="font-medium text-foreground group-hover:text-primary transition-colors duration-300 line-clamp-2 cursor-pointer"
+          onClick={() => slug && navigate(`/produto/${slug}`)}
+        >
           {name}
         </h3>
         

@@ -14,6 +14,12 @@ export interface Product {
   category_id?: string;
   stock_quantity?: number;
   tags?: string[];
+  slug: string;
+  sku?: string;
+  weight_grams?: number;
+  length_cm?: number;
+  width_cm?: number;
+  height_cm?: number;
 }
 
 export const useProducts = () => {

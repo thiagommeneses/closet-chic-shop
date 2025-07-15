@@ -27,14 +27,16 @@ const Index = () => {
       image: [productDress1],
       isNew: true,
       isOnSale: true,
-      discount: 27
+      discount: 27,
+      slug: 'vestido-midi-elegante'
     },
     {
       id: '2',
       name: "Blusa Clássica Branca",
       price: 99.90,
       image: [productBlouse1],
-      isNew: true
+      isNew: true,
+      slug: 'blusa-classica-branca'
     },
     {
       id: '3',
@@ -43,14 +45,16 @@ const Index = () => {
       originalPrice: 179.90,
       image: [productSkirt1],
       isOnSale: true,
-      discount: 28
+      discount: 28,
+      slug: 'saia-midi-preta'
     },
     {
       id: '4',
       name: "Jaqueta Jeans Casual",
       price: 159.90,
       image: [productJacket1],
-      isNew: true
+      isNew: true,
+      slug: 'jaqueta-jeans-casual'
     },
     {
       id: '5',
@@ -59,20 +63,23 @@ const Index = () => {
       originalPrice: 279.90,
       image: [productDress1],
       isOnSale: true,
-      discount: 29
+      discount: 29,
+      slug: 'vestido-floral-verao'
     },
     {
       id: '6',
       name: "Blusa Decote V",
       price: 89.90,
-      image: [productBlouse1]
+      image: [productBlouse1],
+      slug: 'blusa-decote-v'
     },
     {
       id: '7',
       name: "Saia Plissada",
       price: 149.90,
       image: [productSkirt1],
-      isNew: true
+      isNew: true,
+      slug: 'saia-plissada'
     },
     {
       id: '8',
@@ -81,7 +88,8 @@ const Index = () => {
       originalPrice: 289.90,
       image: [productJacket1],
       isOnSale: true,
-      discount: 24
+      discount: 24,
+      slug: 'blazer-estruturado'
     }
   ];
 

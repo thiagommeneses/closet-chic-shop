@@ -7,6 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { Cart } from "@/components/Cart";
 import Index from "./pages/Index";
+import Product from "./pages/Product";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 import { AdminLogin } from "./pages/admin/AdminLogin";
@@ -29,6 +30,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/produto/:slug" element={<Product />} />
               <Route path="/checkout" element={<Checkout />} />
               
               {/* Admin Routes */}
