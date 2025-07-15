@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 
 interface ProductCardProps {
-  id: number;
+  id: number | string;
   name: string;
   price: number;
   originalPrice?: number;
-  image: string;
+  image: string | string[];
   isNew?: boolean;
   isOnSale?: boolean;
   discount?: number;
@@ -32,11 +32,12 @@ export const ProductCard = ({
   const { addItem, openCart } = useCart();
 
   const handleAddToCart = () => {
+    const imageUrl = Array.isArray(image) ? image[0] : image;
     addItem({
-      id,
+      id: typeof id === 'string' ? parseInt(id) : id,
       name,
       price,
-      image
+      image: imageUrl
     });
     openCart();
   };
@@ -83,7 +84,7 @@ export const ProductCard = ({
       {/* Product Image */}
       <div className="relative aspect-[3/4] overflow-hidden">
         <img
-          src={image}
+          src={Array.isArray(image) ? image[0] : image}
           alt={name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

@@ -5,108 +5,114 @@ import { ProductGrid } from '@/components/ProductGrid';
 import { ProductCard } from '@/components/ProductCard';
 import { Footer } from '@/components/Footer';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { useProducts } from '@/hooks/useProducts';
+import { mapProductToCardData } from '@/utils/productUtils';
 
-// Import product images
+// Import fallback product images
 import productDress1 from '@/assets/product-dress-1.jpg';
 import productBlouse1 from '@/assets/product-blouse-1.jpg';
 import productSkirt1 from '@/assets/product-skirt-1.jpg';
 import productJacket1 from '@/assets/product-jacket-1.jpg';
 
 const Index = () => {
-  // Mock product data
-  const newProducts = [
+  const { products, loading, error } = useProducts();
+
+  // Fallback mock products for when there are no products in the database
+  const fallbackProducts = [
     {
-      id: 1,
+      id: '1',
       name: "Vestido Midi Elegante",
       price: 189.90,
       originalPrice: 259.90,
-      image: productDress1,
+      image: [productDress1],
       isNew: true,
       isOnSale: true,
       discount: 27
     },
     {
-      id: 2,
+      id: '2',
       name: "Blusa Clássica Branca",
       price: 99.90,
-      image: productBlouse1,
+      image: [productBlouse1],
       isNew: true
     },
     {
-      id: 3,
+      id: '3',
       name: "Saia Midi Preta",
       price: 129.90,
       originalPrice: 179.90,
-      image: productSkirt1,
+      image: [productSkirt1],
       isOnSale: true,
       discount: 28
     },
     {
-      id: 4,
+      id: '4',
       name: "Jaqueta Jeans Casual",
       price: 159.90,
-      image: productJacket1,
+      image: [productJacket1],
       isNew: true
     },
     {
-      id: 5,
+      id: '5',
       name: "Vestido Floral Verão",
       price: 199.90,
       originalPrice: 279.90,
-      image: productDress1,
+      image: [productDress1],
       isOnSale: true,
       discount: 29
     },
     {
-      id: 6,
+      id: '6',
       name: "Blusa Decote V",
       price: 89.90,
-      image: productBlouse1
+      image: [productBlouse1]
     },
     {
-      id: 7,
+      id: '7',
       name: "Saia Plissada",
       price: 149.90,
-      image: productSkirt1,
+      image: [productSkirt1],
       isNew: true
     },
     {
-      id: 8,
+      id: '8',
       name: "Blazer Estruturado",
       price: 219.90,
       originalPrice: 289.90,
-      image: productJacket1,
+      image: [productJacket1],
       isOnSale: true,
       discount: 24
     }
   ];
 
-  const bestSellers = [
-    {
-      id: 9,
-      name: "Vestido Festa Elegante",
-      price: 299.90,
-      image: productDress1
-    },
-    {
-      id: 10,
-      name: "Camisa Social Feminina",
-      price: 119.90,
-      image: productBlouse1
-    },
-    {
-      id: 11,
-      name: "Saia Lápis Executiva",
-      price: 139.90,
-      image: productSkirt1
-    },
-    {
-      id: 12,
-      name: "Casaco Inverno",
-      price: 189.90,
-      image: productJacket1
-    }
-  ];
+  // Process real products or use fallbacks
+  const processedProducts = products.length > 0 
+    ? products.map(mapProductToCardData)
+    : fallbackProducts;
+
+  // Get new products (first 8)
+  const newProducts = processedProducts.slice(0, 8);
+  
+  // Get featured/best sellers (next 4 or first 4 if not enough products)
+  const bestSellers = processedProducts.length > 8 
+    ? processedProducts.slice(8, 12)
+    : processedProducts.slice(0, 4);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando produtos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Error loading products:', error);
+    // Continue with fallback products on error
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,6 +127,11 @@ const Index = () => {
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">
               NEWS
             </h2>
+            {products.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Exibindo produtos de demonstração
+              </p>
+            )}
           </div>
 
           {/* First row - 4 products */}
@@ -134,14 +145,16 @@ const Index = () => {
           </div>
 
           {/* Second row - 4 products */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {newProducts.slice(4, 8).map((product) => (
-              <ProductCard
-                key={product.id}
-                {...product}
-              />
-            ))}
-          </div>
+          {newProducts.length > 4 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {newProducts.slice(4, 8).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  {...product}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
