@@ -12,12 +12,19 @@ import {
   Minus,
   Plus,
   Check,
-  ArrowLeft
+  ArrowLeft,
+  Ruler,
+  FileText,
+  Shirt,
+  Droplets,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
 import { useCart } from '@/contexts/CartContext';
 import { useProducts } from '@/hooks/useProducts';
 import { Header } from '@/components/Header';
@@ -34,6 +41,8 @@ export default function Product() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [cep, setCep] = useState('');
   
   const product = products.find(p => p.slug === slug);
   
@@ -111,10 +120,32 @@ export default function Product() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          {/* Product Images */}
-          <div className="space-y-4">
-            {/* Main Image */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
+          {/* Thumbnail Images */}
+          <div className="lg:col-span-2">
+            {images.length > 1 && (
+              <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible">
+                {images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`flex-shrink-0 w-20 h-20 lg:w-full lg:h-24 rounded-lg overflow-hidden border-2 transition-colors ${
+                      index === currentImageIndex ? 'border-primary' : 'border-muted'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.name} - ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Main Image */}
+          <div className="lg:col-span-6">
             <div className="relative aspect-square bg-muted rounded-lg overflow-hidden group">
               <img
                 src={currentImage}
@@ -158,48 +189,27 @@ export default function Product() {
                 )}
               </div>
             </div>
-
-            {/* Thumbnail Images */}
-            {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      index === currentImageIndex ? 'border-primary' : 'border-transparent'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} - ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="lg:col-span-4 space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-foreground mb-2">
                 {product.name}
               </h1>
-              <p className="text-muted-foreground">
-                SKU: {product.sku || 'N/A'}
+              <p className="text-sm text-muted-foreground">
+                {product.sku || 'N/A'} - EM ESTOQUE - P/M/G DE 2,18/1,SEM JUROS
               </p>
             </div>
 
             {/* Price */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-primary">
+                <span className="text-2xl font-bold text-foreground">
                   {formatPrice(product.sale_price || product.price)}
                 </span>
                 {hasDiscount && (
-                  <span className="text-xl text-muted-foreground line-through">
+                  <span className="text-lg text-muted-foreground line-through">
                     {formatPrice(product.price)}
                   </span>
                 )}
@@ -209,90 +219,151 @@ export default function Product() {
               </p>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-4 w-4 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-                  />
+            {/* Size Selector */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">TAMANHO</label>
+              <div className="flex gap-2">
+                {['36', '38', '40', '42'].map((size) => (
+                  <Button
+                    key={size}
+                    variant={selectedSize === size ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedSize(size)}
+                    className="w-12 h-12"
+                  >
+                    {size}
+                  </Button>
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">(42 avaliações)</span>
             </div>
 
-            {/* Description */}
-            {product.description && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">Descrição</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {product.description}
+            {/* Collapsible Product Details */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="measurements">
+                <AccordionTrigger className="text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <Ruler className="h-4 w-4" />
+                    GUIA DE MEDIDAS
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2 text-sm">
+                    <p>Consulte nossa tabela de medidas para escolher o tamanho ideal.</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>P: 36-38</div>
+                      <div>M: 40-42</div>
+                      <div>G: 44-46</div>
+                      <div>GG: 48-50</div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="description">
+                <AccordionTrigger className="text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    DESCRIÇÃO
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm">
+                    {product.description || 'Produto de alta qualidade, confeccionado com materiais selecionados e acabamento impecável.'}
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="composition">
+                <AccordionTrigger className="text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <Shirt className="h-4 w-4" />
+                    COMPOSIÇÃO
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <p className="text-sm">
+                    COMPOSIÇÃO: 100% VISCOSE
+                  </p>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="care">
+                <AccordionTrigger className="text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <Droplets className="h-4 w-4" />
+                    CUIDADOS COM A PEÇA
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-1 text-sm">
+                    <p>• Lavagem à máquina em água fria</p>
+                    <p>• Não usar alvejante</p>
+                    <p>• Secar à sombra</p>
+                    <p>• Passar ferro em temperatura baixa</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            {/* Stock Alert */}
+            {(product.stock_quantity || 0) <= 5 && (product.stock_quantity || 0) > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <p className="text-sm font-medium text-orange-800">
+                  ÚLTIMAS {product.stock_quantity} UNIDADES DISPONÍVEIS
                 </p>
               </div>
             )}
 
             {/* Quantity Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Quantidade</label>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-12 text-center font-medium">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(quantity + 1)}
-                  disabled={quantity >= (product.stock_quantity || 100)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={quantity <= 1}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-12 text-center font-medium">{quantity}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setQuantity(quantity + 1)}
+                disabled={quantity >= (product.stock_quantity || 100)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-3">
               <Button
                 size="lg"
-                className="w-full"
+                className="w-full bg-primary hover:bg-primary/90"
                 onClick={handleAddToCart}
                 disabled={(product.stock_quantity || 0) <= 0}
               >
-                <ShoppingBag className="h-5 w-5 mr-2" />
-                {(product.stock_quantity || 0) <= 0 ? 'Fora de Estoque' : 'Adicionar ao Carrinho'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full"
-                onClick={() => setIsWishlisted(!isWishlisted)}
-              >
-                <Heart className={`h-5 w-5 mr-2 ${isWishlisted ? 'fill-current text-primary' : ''}`} />
-                {isWishlisted ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
+                {(product.stock_quantity || 0) <= 0 ? 'FORA DE ESTOQUE' : 'ADICIONAR AO CARRINHO'}
               </Button>
             </div>
 
-            {/* Benefits */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Truck className="h-4 w-4 text-primary" />
-                <span>Frete Grátis</span>
+            {/* Shipping Calculator */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium">CALCULAR FRETE E PRAZO</h4>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="CEP"
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  className="flex-1"
+                />
+                <Button variant="outline" size="sm">
+                  CALCULAR
+                </Button>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Shield className="h-4 w-4 text-primary" />
-                <span>Garantia</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <RotateCcw className="h-4 w-4 text-primary" />
-                <span>Troca Grátis</span>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                RETIRADA EM MÃOS
+              </p>
             </div>
           </div>
         </div>
