@@ -31,6 +31,8 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
 import { mapProductToCardData } from '@/utils/productUtils';
+import { ShippingCalculator } from '@/components/ShippingCalculator';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Product() {
   const { slug } = useParams<{ slug: string }>();
@@ -42,7 +44,9 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
-  const [cep, setCep] = useState('');
+  const [variations, setVariations] = useState<any[]>([]);
+  const [productDetails, setProductDetails] = useState<any>({});
+  const [selectedShipping, setSelectedShipping] = useState<any>(null);
   
   const product = products.find(p => p.slug === slug);
   
@@ -51,6 +55,53 @@ export default function Product() {
       navigate('/');
     }
   }, [product, loading, navigate]);
+
+  // Load product variations and details
+  useEffect(() => {
+    if (product?.id) {
+      loadProductData(product.id);
+    }
+  }, [product?.id]);
+
+  const loadProductData = async (productId: string) => {
+    try {
+      // Load variations
+      const { data: variationsData } = await supabase
+        .from('product_variations')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('active', true);
+
+      // Load product details with templates
+      const { data: detailsData } = await supabase
+        .from('product_details')
+        .select(`
+          *,
+          product_details_templates (
+            id,
+            name,
+            type,
+            content
+          )
+        `)
+        .eq('product_id', productId);
+
+      if (variationsData) {
+        setVariations(variationsData);
+      }
+
+      if (detailsData) {
+        const detailsMap = detailsData.reduce((acc: any, detail: any) => {
+          const template = detail.product_details_templates;
+          acc[template.type] = template;
+          return acc;
+        }, {});
+        setProductDetails(detailsMap);
+      }
+    } catch (error) {
+      console.error('Error loading product data:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -129,15 +180,15 @@ export default function Product() {
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20 lg:w-full lg:h-24 rounded-lg overflow-hidden border-2 transition-colors ${
-                      index === currentImageIndex ? 'border-primary' : 'border-muted'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} - ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                     className={`flex-shrink-0 w-20 h-32 lg:w-full lg:aspect-[2/3] rounded-lg overflow-hidden border-2 transition-colors ${
+                       index === currentImageIndex ? 'border-primary' : 'border-muted'
+                     }`}
+                   >
+                     <img
+                       src={image}
+                       alt={`${product.name} - ${index + 1}`}
+                       className="w-full h-full object-cover object-center"
+                     />
                   </button>
                 ))}
               </div>
@@ -146,11 +197,11 @@ export default function Product() {
 
           {/* Main Image */}
           <div className="lg:col-span-6">
-            <div className="relative aspect-square bg-muted rounded-lg overflow-hidden group">
+            <div className="relative aspect-[2/3] bg-muted rounded-lg overflow-hidden group">
               <img
                 src={currentImage}
                 alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
               />
               
               {/* Image Navigation */}
@@ -220,44 +271,51 @@ export default function Product() {
             </div>
 
             {/* Size Selector */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">TAMANHO</label>
-              <div className="flex gap-2">
-                {['36', '38', '40', '42'].map((size) => (
-                  <Button
-                    key={size}
-                    variant={selectedSize === size ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedSize(size)}
-                    className="w-12 h-12"
-                  >
-                    {size}
-                  </Button>
-                ))}
+            {variations.filter(v => v.variation_type === 'size').length > 0 && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">TAMANHO</label>
+                <div className="flex gap-2">
+                  {variations
+                    .filter(v => v.variation_type === 'size')
+                    .map((variation) => (
+                      <Button
+                        key={variation.id}
+                        variant={selectedSize === variation.variation_value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedSize(variation.variation_value)}
+                        className="w-12 h-12"
+                      >
+                        {variation.variation_value}
+                      </Button>
+                    ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Collapsible Product Details */}
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="measurements">
-                <AccordionTrigger className="text-sm font-medium">
-                  <div className="flex items-center gap-2">
-                    <Ruler className="h-4 w-4" />
-                    GUIA DE MEDIDAS
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 text-sm">
-                    <p>Consulte nossa tabela de medidas para escolher o tamanho ideal.</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>P: 36-38</div>
-                      <div>M: 40-42</div>
-                      <div>G: 44-46</div>
-                      <div>GG: 48-50</div>
+              {productDetails.size_guide && (
+                <AccordionItem value="measurements">
+                  <AccordionTrigger className="text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <Ruler className="h-4 w-4" />
+                      GUIA DE MEDIDAS
                     </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 text-sm">
+                      <p>Consulte nossa tabela de medidas para escolher o tamanho ideal.</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(productDetails.size_guide.content).map(([size, measurements]: [string, any]) => (
+                          <div key={size}>
+                            <strong>{size}:</strong> {measurements.bust} | {measurements.waist} | {measurements.hip}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
               <AccordionItem value="description">
                 <AccordionTrigger className="text-sm font-medium">
@@ -273,36 +331,45 @@ export default function Product() {
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="composition">
-                <AccordionTrigger className="text-sm font-medium">
-                  <div className="flex items-center gap-2">
-                    <Shirt className="h-4 w-4" />
-                    COMPOSIÇÃO
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <p className="text-sm">
-                    COMPOSIÇÃO: 100% VISCOSE
-                  </p>
-                </AccordionContent>
-              </AccordionItem>
+              {productDetails.composition && (
+                <AccordionItem value="composition">
+                  <AccordionTrigger className="text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <Shirt className="h-4 w-4" />
+                      COMPOSIÇÃO
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-1 text-sm">
+                      <p><strong>Material:</strong> {productDetails.composition.content.materials?.join(', ')}</p>
+                      <p><strong>Origem:</strong> {productDetails.composition.content.origin}</p>
+                      {productDetails.composition.content.certifications?.length > 0 && (
+                        <p><strong>Certificações:</strong> {productDetails.composition.content.certifications.join(', ')}</p>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
 
-              <AccordionItem value="care">
-                <AccordionTrigger className="text-sm font-medium">
-                  <div className="flex items-center gap-2">
-                    <Droplets className="h-4 w-4" />
-                    CUIDADOS COM A PEÇA
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-1 text-sm">
-                    <p>• Lavagem à máquina em água fria</p>
-                    <p>• Não usar alvejante</p>
-                    <p>• Secar à sombra</p>
-                    <p>• Passar ferro em temperatura baixa</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+              {productDetails.care_instructions && (
+                <AccordionItem value="care">
+                  <AccordionTrigger className="text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <Droplets className="h-4 w-4" />
+                      CUIDADOS COM A PEÇA
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-1 text-sm">
+                      <p>• {productDetails.care_instructions.content.washing}</p>
+                      <p>• {productDetails.care_instructions.content.drying}</p>
+                      <p>• {productDetails.care_instructions.content.ironing}</p>
+                      <p>• {productDetails.care_instructions.content.bleaching}</p>
+                      <p>• {productDetails.care_instructions.content.dry_cleaning}</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
             </Accordion>
 
             {/* Stock Alert */}
@@ -349,21 +416,16 @@ export default function Product() {
 
             {/* Shipping Calculator */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium">CALCULAR FRETE E PRAZO</h4>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="CEP"
-                  value={cep}
-                  onChange={(e) => setCep(e.target.value)}
-                  className="flex-1"
-                />
-                <Button variant="outline" size="sm">
-                  CALCULAR
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                RETIRADA EM MÃOS
-              </p>
+              <ShippingCalculator
+                onShippingSelect={setSelectedShipping}
+                totalWeight={product.weight_grams || 500}
+                dimensions={{
+                  comprimento: product.length_cm || 20,
+                  altura: product.height_cm || 10,
+                  largura: product.width_cm || 15
+                }}
+                cartTotal={(product.sale_price || product.price) * quantity}
+              />
             </div>
           </div>
         </div>

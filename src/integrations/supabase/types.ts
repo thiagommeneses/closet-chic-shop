@@ -233,6 +233,119 @@ export type Database = {
           },
         ]
       }
+      product_details: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_details_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_details_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_details_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_details_templates: {
+        Row: {
+          active: boolean | null
+          content: Json
+          created_at: string
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          content: Json
+          created_at?: string
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          content?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_variations: {
+        Row: {
+          active: boolean | null
+          created_at: string
+          id: string
+          price_adjustment: number | null
+          product_id: string
+          sku: string | null
+          stock_quantity: number | null
+          updated_at: string
+          variation_type: string
+          variation_value: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          price_adjustment?: number | null
+          product_id: string
+          sku?: string | null
+          stock_quantity?: number | null
+          updated_at?: string
+          variation_type: string
+          variation_value: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string
+          id?: string
+          price_adjustment?: number | null
+          product_id?: string
+          sku?: string | null
+          stock_quantity?: number | null
+          updated_at?: string
+          variation_type?: string
+          variation_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean | null
