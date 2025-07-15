@@ -8,13 +8,38 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react';
 
 interface Category {
   id: string;
   name: string;
+}
+
+interface ProductVariation {
+  id?: string;
+  variation_type: string;
+  variation_value: string;
+  price_adjustment: number;
+  stock_quantity: number;
+  sku: string;
+  active: boolean;
+}
+
+interface ProductDetailsTemplate {
+  id: string;
+  name: string;
+  type: string;
+  content: any;
+}
+
+interface ProductDetail {
+  id?: string;
+  template_id: string;
+  template?: ProductDetailsTemplate;
 }
 
 interface ProductFormData {
@@ -43,8 +68,11 @@ export const ProductForm = () => {
   const isEditing = !!id;
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [templates, setTemplates] = useState<ProductDetailsTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [variations, setVariations] = useState<ProductVariation[]>([]);
+  const [productDetails, setProductDetails] = useState<ProductDetail[]>([]);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -67,6 +95,7 @@ export const ProductForm = () => {
 
   useEffect(() => {
     loadCategories();
+    loadTemplates();
     if (isEditing) {
       loadProduct();
     }
@@ -90,34 +119,76 @@ export const ProductForm = () => {
     }
   };
 
-  const loadProduct = async () => {
+  const loadTemplates = async () => {
     try {
       const { data, error } = await supabase
+        .from('product_details_templates')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setTemplates(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar templates",
+        description: error.message
+      });
+    }
+  };
+
+  const loadProduct = async () => {
+    try {
+      // Load product basic info
+      const { data: product, error: productError } = await supabase
         .from('products')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (productError) throw productError;
 
       setFormData({
-        name: data.name || '',
-        slug: data.slug || '',
-        description: data.description || '',
-        price: data.price?.toString() || '',
-        sale_price: data.sale_price?.toString() || '',
-        stock_quantity: data.stock_quantity?.toString() || '0',
-        category_id: data.category_id || '',
-        sku: data.sku || '',
-        tags: data.tags?.join(', ') || '',
-        featured: data.featured || false,
-        active: data.active !== false,
-        images: data.images || [],
-        weight_grams: data.weight_grams?.toString() || '500',
-        length_cm: data.length_cm?.toString() || '20',
-        width_cm: data.width_cm?.toString() || '15',
-        height_cm: data.height_cm?.toString() || '10'
+        name: product.name || '',
+        slug: product.slug || '',
+        description: product.description || '',
+        price: product.price?.toString() || '',
+        sale_price: product.sale_price?.toString() || '',
+        stock_quantity: product.stock_quantity?.toString() || '0',
+        category_id: product.category_id || '',
+        sku: product.sku || '',
+        tags: product.tags?.join(', ') || '',
+        featured: product.featured || false,
+        active: product.active !== false,
+        images: product.images || [],
+        weight_grams: product.weight_grams?.toString() || '500',
+        length_cm: product.length_cm?.toString() || '20',
+        width_cm: product.width_cm?.toString() || '15',
+        height_cm: product.height_cm?.toString() || '10'
       });
+
+      // Load product variations
+      const { data: variationsData, error: variationsError } = await supabase
+        .from('product_variations')
+        .select('*')
+        .eq('product_id', id);
+
+      if (variationsError) throw variationsError;
+      setVariations(variationsData || []);
+
+      // Load product details
+      const { data: detailsData, error: detailsError } = await supabase
+        .from('product_details')
+        .select(`
+          *,
+          template:product_details_templates(*)
+        `)
+        .eq('product_id', id);
+
+      if (detailsError) throw detailsError;
+      setProductDetails(detailsData || []);
+
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -144,7 +215,6 @@ export const ProductForm = () => {
       [field]: value
     }));
 
-    // Auto-generate slug from name
     if (field === 'name' && typeof value === 'string') {
       setFormData(prev => ({
         ...prev,
@@ -208,6 +278,38 @@ export const ProductForm = () => {
     }));
   };
 
+  const addVariation = () => {
+    setVariations(prev => [...prev, {
+      variation_type: 'size',
+      variation_value: '',
+      price_adjustment: 0,
+      stock_quantity: 0,
+      sku: '',
+      active: true
+    }]);
+  };
+
+  const updateVariation = (index: number, field: string, value: any) => {
+    setVariations(prev => prev.map((variation, i) => 
+      i === index ? { ...variation, [field]: value } : variation
+    ));
+  };
+
+  const removeVariation = (index: number) => {
+    setVariations(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleDetailTemplate = (templateId: string) => {
+    setProductDetails(prev => {
+      const exists = prev.find(detail => detail.template_id === templateId);
+      if (exists) {
+        return prev.filter(detail => detail.template_id !== templateId);
+      } else {
+        return [...prev, { template_id: templateId }];
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -232,6 +334,8 @@ export const ProductForm = () => {
         height_cm: parseInt(formData.height_cm) || 10
       };
 
+      let productId = id;
+
       if (isEditing) {
         const { error } = await supabase
           .from('products')
@@ -239,21 +343,71 @@ export const ProductForm = () => {
           .eq('id', id);
 
         if (error) throw error;
-        
-        toast({
-          title: "Produto atualizado com sucesso!"
-        });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
-          .insert([productData]);
+          .insert([productData])
+          .select('id')
+          .single();
 
         if (error) throw error;
-        
-        toast({
-          title: "Produto criado com sucesso!"
-        });
+        productId = data.id;
       }
+
+      // Handle variations
+      if (isEditing) {
+        // Delete existing variations
+        await supabase
+          .from('product_variations')
+          .delete()
+          .eq('product_id', id);
+      }
+
+      // Insert new variations
+      if (variations.length > 0) {
+        const variationData = variations.map(variation => ({
+          product_id: productId,
+          variation_type: variation.variation_type,
+          variation_value: variation.variation_value,
+          price_adjustment: variation.price_adjustment,
+          stock_quantity: variation.stock_quantity,
+          sku: variation.sku,
+          active: variation.active
+        }));
+
+        const { error: variationError } = await supabase
+          .from('product_variations')
+          .insert(variationData);
+
+        if (variationError) throw variationError;
+      }
+
+      // Handle product details
+      if (isEditing) {
+        // Delete existing details
+        await supabase
+          .from('product_details')
+          .delete()
+          .eq('product_id', id);
+      }
+
+      // Insert new details
+      if (productDetails.length > 0) {
+        const detailsData = productDetails.map(detail => ({
+          product_id: productId,
+          template_id: detail.template_id
+        }));
+
+        const { error: detailsError } = await supabase
+          .from('product_details')
+          .insert(detailsData);
+
+        if (detailsError) throw detailsError;
+      }
+
+      toast({
+        title: `Produto ${isEditing ? 'atualizado' : 'criado'} com sucesso!`
+      });
 
       navigate('/admin/products');
     } catch (error: any) {
@@ -285,278 +439,428 @@ export const ProductForm = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Produto *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Ex: Vestido Elegante"
-                    required
-                  />
-                </div>
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="general">Informações Gerais</TabsTrigger>
+            <TabsTrigger value="variations">Variações</TabsTrigger>
+            <TabsTrigger value="details">Detalhes</TabsTrigger>
+            <TabsTrigger value="images">Imagens</TabsTrigger>
+          </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="slug">URL do Produto *</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => handleInputChange('slug', e.target.value)}
-                    placeholder="vestido-elegante"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Descreva o produto..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoria</Label>
-                  <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pricing & Inventory */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Preço e Estoque</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Preço Regular *</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => handleInputChange('price', e.target.value)}
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="sale_price">Preço Promocional</Label>
-                    <Input
-                      id="sale_price"
-                      type="number"
-                      step="0.01"
-                      value={formData.sale_price}
-                      onChange={(e) => handleInputChange('sale_price', e.target.value)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="stock_quantity">Quantidade em Estoque</Label>
-                    <Input
-                      id="stock_quantity"
-                      type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input
-                      id="sku"
-                      value={formData.sku}
-                      onChange={(e) => handleInputChange('sku', e.target.value)}
-                      placeholder="PROD-001"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-                  <Input
-                    id="tags"
-                    value={formData.tags}
-                    onChange={(e) => handleInputChange('tags', e.target.value)}
-                    placeholder="elegante, festa, premium"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Shipping & Dimensions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Dimensões e Frete</CardTitle>
-                <CardDescription>
-                  Informações necessárias para cálculo de frete
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="weight_grams">Peso (gramas)</Label>
-                    <Input
-                      id="weight_grams"
-                      type="number"
-                      value={formData.weight_grams}
-                      onChange={(e) => handleInputChange('weight_grams', e.target.value)}
-                      placeholder="500"
-                      min="1"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="length_cm">Comprimento (cm)</Label>
-                    <Input
-                      id="length_cm"
-                      type="number"
-                      value={formData.length_cm}
-                      onChange={(e) => handleInputChange('length_cm', e.target.value)}
-                      placeholder="20"
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="width_cm">Largura (cm)</Label>
-                    <Input
-                      id="width_cm"
-                      type="number"
-                      value={formData.width_cm}
-                      onChange={(e) => handleInputChange('width_cm', e.target.value)}
-                      placeholder="15"
-                      min="1"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="height_cm">Altura (cm)</Label>
-                    <Input
-                      id="height_cm"
-                      type="number"
-                      value={formData.height_cm}
-                      onChange={(e) => handleInputChange('height_cm', e.target.value)}
-                      placeholder="10"
-                      min="1"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Images */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Imagens do Produto</CardTitle>
-              <CardDescription>
-                Adicione imagens para mostrar seu produto
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={uploading}
-                />
-                {uploading && <span className="text-sm text-muted-foreground">Enviando...</span>}
-              </div>
-
-              {formData.images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={image}
-                        alt={`Produto ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border"
+          <form onSubmit={handleSubmit}>
+            <TabsContent value="general" className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Basic Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações Básicas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nome do Produto *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder="Ex: Vestido Elegante"
+                        required
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">URL do Produto *</Label>
+                      <Input
+                        id="slug"
+                        value={formData.slug}
+                        onChange={(e) => handleInputChange('slug', e.target.value)}
+                        placeholder="vestido-elegante"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Descrição</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="Descreva o produto..."
+                        rows={4}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Categoria</Label>
+                      <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pricing & Inventory */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Preço e Estoque</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="price">Preço Regular *</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          value={formData.price}
+                          onChange={(e) => handleInputChange('price', e.target.value)}
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="sale_price">Preço Promocional</Label>
+                        <Input
+                          id="sale_price"
+                          type="number"
+                          step="0.01"
+                          value={formData.sale_price}
+                          onChange={(e) => handleInputChange('sale_price', e.target.value)}
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="stock_quantity">Quantidade em Estoque</Label>
+                        <Input
+                          id="stock_quantity"
+                          type="number"
+                          value={formData.stock_quantity}
+                          onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="sku">SKU</Label>
+                        <Input
+                          id="sku"
+                          value={formData.sku}
+                          onChange={(e) => handleInputChange('sku', e.target.value)}
+                          placeholder="PROD-001"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                      <Input
+                        id="tags"
+                        value={formData.tags}
+                        onChange={(e) => handleInputChange('tags', e.target.value)}
+                        placeholder="elegante, festa, premium"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Shipping & Dimensions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dimensões e Frete</CardTitle>
+                    <CardDescription>
+                      Informações necessárias para cálculo de frete
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="weight_grams">Peso (gramas)</Label>
+                        <Input
+                          id="weight_grams"
+                          type="number"
+                          value={formData.weight_grams}
+                          onChange={(e) => handleInputChange('weight_grams', e.target.value)}
+                          placeholder="500"
+                          min="1"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="length_cm">Comprimento (cm)</Label>
+                        <Input
+                          id="length_cm"
+                          type="number"
+                          value={formData.length_cm}
+                          onChange={(e) => handleInputChange('length_cm', e.target.value)}
+                          placeholder="20"
+                          min="1"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="width_cm">Largura (cm)</Label>
+                        <Input
+                          id="width_cm"
+                          type="number"
+                          value={formData.width_cm}
+                          onChange={(e) => handleInputChange('width_cm', e.target.value)}
+                          placeholder="15"
+                          min="1"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="height_cm">Altura (cm)</Label>
+                        <Input
+                          id="height_cm"
+                          type="number"
+                          value={formData.height_cm}
+                          onChange={(e) => handleInputChange('height_cm', e.target.value)}
+                          placeholder="10"
+                          min="1"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Configurações</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="featured"
+                        checked={formData.featured}
+                        onCheckedChange={(checked) => handleInputChange('featured', !!checked)}
+                      />
+                      <Label htmlFor="featured">Produto em destaque</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="active"
+                        checked={formData.active}
+                        onCheckedChange={(checked) => handleInputChange('active', !!checked)}
+                      />
+                      <Label htmlFor="active">Produto ativo (visível na loja)</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="variations" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Variações do Produto</CardTitle>
+                  <CardDescription>
+                    Configure tamanhos, cores e outras variações do produto
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button type="button" onClick={addVariation} className="mb-4">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Variação
+                  </Button>
+
+                  {variations.map((variation, index) => (
+                    <div key={index} className="grid grid-cols-6 gap-4 items-end p-4 border rounded-lg">
+                      <div className="space-y-2">
+                        <Label>Tipo</Label>
+                        <Select
+                          value={variation.variation_type}
+                          onValueChange={(value) => updateVariation(index, 'variation_type', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="size">Tamanho</SelectItem>
+                            <SelectItem value="color">Cor</SelectItem>
+                            <SelectItem value="material">Material</SelectItem>
+                            <SelectItem value="style">Estilo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Valor</Label>
+                        <Input
+                          value={variation.variation_value}
+                          onChange={(e) => updateVariation(index, 'variation_value', e.target.value)}
+                          placeholder="P, M, G..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Ajuste de Preço</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={variation.price_adjustment}
+                          onChange={(e) => updateVariation(index, 'price_adjustment', parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Estoque</Label>
+                        <Input
+                          type="number"
+                          value={variation.stock_quantity}
+                          onChange={(e) => updateVariation(index, 'stock_quantity', parseInt(e.target.value) || 0)}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>SKU</Label>
+                        <Input
+                          value={variation.sku}
+                          onChange={(e) => updateVariation(index, 'sku', e.target.value)}
+                          placeholder="SKU-001"
+                        />
+                      </div>
+
                       <Button
                         type="button"
                         variant="destructive"
                         size="sm"
-                        className="absolute top-2 right-2 h-6 w-6 p-0"
-                        onClick={() => removeImage(index)}
+                        onClick={() => removeVariation(index)}
                       >
-                        <X className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="featured"
-                  checked={formData.featured}
-                  onCheckedChange={(checked) => handleInputChange('featured', !!checked)}
-                />
-                <Label htmlFor="featured">Produto em destaque</Label>
-              </div>
+                  {variations.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nenhuma variação configurada. Clique em "Adicionar Variação" para começar.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => handleInputChange('active', !!checked)}
-                />
-                <Label htmlFor="active">Produto ativo (visível na loja)</Label>
-              </div>
-            </CardContent>
-          </Card>
+            <TabsContent value="details" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detalhes do Produto</CardTitle>
+                  <CardDescription>
+                    Selecione os detalhes que se aplicam a este produto
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {templates.map((template) => {
+                      const isSelected = productDetails.some(detail => detail.template_id === template.id);
+                      return (
+                        <div
+                          key={template.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                            isSelected ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                          }`}
+                          onClick={() => toggleDetailTemplate(template.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-medium">{template.name}</h3>
+                              <p className="text-sm text-muted-foreground">{template.type}</p>
+                            </div>
+                            {isSelected && (
+                              <Badge variant="secondary">Selecionado</Badge>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
 
-          {/* Submit Buttons */}
-          <div className="flex items-center justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Criar')} Produto
-            </Button>
-          </div>
-        </form>
+                  {templates.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nenhum template de detalhes disponível. Configure templates na seção de configurações.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="images" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Imagens do Produto</CardTitle>
+                  <CardDescription>
+                    Adicione imagens para mostrar seu produto (formato ideal: 2:3)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                    {uploading && <span className="text-sm text-muted-foreground">Enviando...</span>}
+                  </div>
+
+                  {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {formData.images.map((image, index) => (
+                        <div key={index} className="relative">
+                          <div className="aspect-[2/3] overflow-hidden rounded-lg border">
+                            <img
+                              src={image}
+                              alt={`Produto ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 h-6 w-6 p-0"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Submit Buttons */}
+            <div className="flex items-center justify-end space-x-4 pt-6">
+              <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Criar')} Produto
+              </Button>
+            </div>
+          </form>
+        </Tabs>
       </div>
     </AdminLayout>
   );
