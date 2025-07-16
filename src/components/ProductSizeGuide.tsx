@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Ruler, User, X } from 'lucide-react';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface ProductSizeGuideProps {
   sizeGuideContent: string;
@@ -14,6 +15,8 @@ interface ProductSizeGuideProps {
   onSizeSelect?: (size: string) => void;
   onAddToCart?: (size: string) => void;
   price?: number;
+  productId?: string | number;
+  slug?: string;
 }
 
 export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
@@ -23,8 +26,11 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
   selectedSize,
   onSizeSelect,
   onAddToCart,
-  price
+  price,
+  productId,
+  slug
 }) => {
+  const { toggleFavorite, isFavorite } = useFavorites();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('size-guide');
 
@@ -79,6 +85,18 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
     // Não fechar o popup automaticamente ao selecionar tamanho
   };
 
+  const handleAddToWishlist = () => {
+    if (productId && price) {
+      toggleFavorite({
+        id: productId,
+        name: productName,
+        price,
+        image: productImage || '',
+        slug
+      });
+    }
+  };
+
   const handleAddToCart = () => {
     if (selectedSize && onAddToCart) {
       onAddToCart(selectedSize);
@@ -92,6 +110,8 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
       currency: 'BRL'
     }).format(value);
   };
+
+  const isInWishlist = productId ? isFavorite(productId) : false;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -195,8 +215,13 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
             )}
             
             <div className="flex gap-2 pt-4">
-              <Button onClick={() => setIsOpen(false)} variant="outline" className="flex-1">
-                Adicionar à wishlist
+              <Button 
+                onClick={handleAddToWishlist} 
+                variant="outline" 
+                className="flex-1"
+                disabled={!productId}
+              >
+                {isInWishlist ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
               </Button>
               <Button 
                 onClick={handleAddToCart} 

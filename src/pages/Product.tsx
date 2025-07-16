@@ -297,6 +297,8 @@ export default function Product() {
                         openCart();
                       }}
                       price={product.sale_price || product.price}
+                      productId={product.id}
+                      slug={product.slug}
                     />
                   )}
                 </div>
