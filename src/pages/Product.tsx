@@ -251,9 +251,31 @@ export default function Product() {
               <h1 className="text-2xl font-bold text-foreground mb-2">
                 {product.name}
               </h1>
-              <p className="text-sm text-muted-foreground">
-                {product.sku || 'N/A'} - EM ESTOQUE - P/M/G DE 2,18/1,SEM JUROS
-              </p>
+              {/* Dynamic Product Information */}
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {product.sku && (
+                    <span className="font-medium">SKU: {product.sku}</span>
+                  )}
+                  {(product.stock_quantity || 0) > 0 ? (
+                    <span className="text-green-600 font-medium">• EM ESTOQUE</span>
+                  ) : (
+                    <span className="text-red-600 font-medium">• ESGOTADO</span>
+                  )}
+                  {variations.filter(v => v.variation_type === 'size' && v.active !== false && v.stock_quantity > 0).length > 0 && (
+                    <span>
+                      • {variations
+                        .filter(v => v.variation_type === 'size' && v.active !== false && v.stock_quantity > 0)
+                        .map(v => v.variation_value)
+                        .join('/')
+                      }
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs">
+                  até {Math.min(12, Math.floor((product.sale_price || product.price) / 10))}x de {formatPrice((product.sale_price || product.price) / Math.min(12, Math.floor((product.sale_price || product.price) / 10)))} sem juros
+                </div>
+              </div>
             </div>
 
             {/* Price */}
