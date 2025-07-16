@@ -106,11 +106,11 @@ export const DualBannerSection = () => {
       <div className="container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {halfBanners.map((banner) => (
-            <div key={banner.id} className="relative h-64 md:h-80 overflow-hidden rounded-lg group">
+            <div key={banner.id} className="relative h-64 md:h-80 overflow-hidden rounded-xl bg-muted group">
               {/* Background Image or Video */}
               {banner.video_url ? (
                 <video
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 rounded-xl"
                   src={banner.video_url}
                   autoPlay
                   loop
@@ -121,7 +121,7 @@ export const DualBannerSection = () => {
                 <>
                   {/* Desktop Image */}
                   <div 
-                    className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block ${
+                    className={`absolute inset-0 bg-muted bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block rounded-xl ${
                       banner.image_fit === 'contain' ? 'bg-contain' : 
                       banner.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
                     } ${
@@ -138,7 +138,7 @@ export const DualBannerSection = () => {
                   />
                   {/* Mobile Image */}
                   <div 
-                    className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden ${
+                    className={`absolute inset-0 bg-muted bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden rounded-xl ${
                       banner.image_fit === 'contain' ? 'bg-contain' : 
                       banner.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
                     } ${
