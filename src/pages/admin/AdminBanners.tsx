@@ -357,7 +357,7 @@ export const AdminBanners = () => {
                 Novo Banner
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingBanner ? 'Editar Banner' : 'Novo Banner'}
@@ -367,268 +367,333 @@ export const AdminBanners = () => {
                 </DialogDescription>
               </DialogHeader>
               
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nome do Banner *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Ex: Banner Principal - Primavera"
-                      required
-                    />
-                  </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Layout responsivo: 2 colunas no desktop, 1 coluna no mobile */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  
+                  {/* Coluna esquerda - Formulário principal */}
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Informações Básicas</h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nome do Banner *</Label>
+                          <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Ex: Banner Principal - Primavera"
+                            required
+                          />
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Tipo *</Label>
-                    <Select value={formData.type} onValueChange={(value: 'hero' | 'half' | 'full') => {
-                      setFormData(prev => ({ ...prev, type: value }));
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hero">Banner Principal</SelectItem>
-                        <SelectItem value="half">Banner Lateral</SelectItem>
-                        <SelectItem value="full">Banner Completo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="type">Tipo *</Label>
+                          <Select value={formData.type} onValueChange={(value: 'hero' | 'half' | 'full') => {
+                            setFormData(prev => ({ ...prev, type: value }));
+                          }}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="hero">Banner Principal</SelectItem>
+                              <SelectItem value="half">Banner Lateral</SelectItem>
+                              <SelectItem value="full">Banner Completo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Ex: PREVIEW"
-                    />
-                  </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="title">Título</Label>
+                          <Input
+                            id="title"
+                            value={formData.title}
+                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                            placeholder="Ex: PREVIEW"
+                          />
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle">Subtítulo</Label>
-                    <Input
-                      id="subtitle"
-                      value={formData.subtitle}
-                      onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-                      placeholder="Ex: PRIMAVERA VERÃO"
-                    />
-                  </div>
-                </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="subtitle">Subtítulo</Label>
+                          <Input
+                            id="subtitle"
+                            value={formData.subtitle}
+                            onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                            placeholder="Ex: PRIMAVERA VERÃO"
+                          />
+                        </div>
+                      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="button_text">Texto do Botão</Label>
-                    <Input
-                      id="button_text"
-                      value={formData.button_text}
-                      onChange={(e) => setFormData(prev => ({ ...prev, button_text: e.target.value }))}
-                      placeholder="Ex: SHOP NOW"
-                    />
-                  </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="button_text">Texto do Botão</Label>
+                          <Input
+                            id="button_text"
+                            value={formData.button_text}
+                            onChange={(e) => setFormData(prev => ({ ...prev, button_text: e.target.value }))}
+                            placeholder="Ex: SHOP NOW"
+                          />
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="button_link">Link do Botão</Label>
-                    <Input
-                      id="button_link"
-                      value={formData.button_link}
-                      onChange={(e) => setFormData(prev => ({ ...prev, button_link: e.target.value }))}
-                      placeholder="Ex: /produtos"
-                    />
-                  </div>
-                </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="button_link">Link do Botão</Label>
+                          <Input
+                            id="button_link"
+                            value={formData.button_link}
+                            onChange={(e) => setFormData(prev => ({ ...prev, button_link: e.target.value }))}
+                            placeholder="Ex: /produtos"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="desktop_image_url">Imagem Desktop</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="desktop_image_url"
-                        value={formData.desktop_image_url}
-                        onChange={(e) => setFormData(prev => ({ ...prev, desktop_image_url: e.target.value }))}
-                        placeholder="https://example.com/desktop-image.jpg"
-                      />
-                      <div className="relative">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleFileUpload(file, 'desktop');
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          disabled={uploading}
-                        />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          disabled={uploading}
-                          className="w-full"
-                        >
-                          {uploading ? 'Carregando...' : 'Upload'}
-                        </Button>
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Configurações de Mídia</h3>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="desktop_image_url">Imagem Desktop</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="desktop_image_url"
+                              value={formData.desktop_image_url}
+                              onChange={(e) => setFormData(prev => ({ ...prev, desktop_image_url: e.target.value }))}
+                              placeholder="https://example.com/desktop-image.jpg"
+                            />
+                            <div className="relative">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleFileUpload(file, 'desktop');
+                                  }
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                disabled={uploading}
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                disabled={uploading}
+                                className="w-full"
+                              >
+                                {uploading ? 'Carregando...' : 'Upload'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="mobile_image_url">Imagem Mobile</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="mobile_image_url"
+                              value={formData.mobile_image_url}
+                              onChange={(e) => setFormData(prev => ({ ...prev, mobile_image_url: e.target.value }))}
+                              placeholder="https://example.com/mobile-image.jpg"
+                            />
+                            <div className="relative">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleFileUpload(file, 'mobile');
+                                  }
+                                }}
+                                className="absolute insets-0 w-full h-full opacity-0 cursor-pointer"
+                                disabled={uploading}
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                disabled={uploading}
+                                className="w-full"
+                              >
+                                {uploading ? 'Carregando...' : 'Upload'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="video_url">Vídeo (opcional)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="video_url"
+                              value={formData.video_url}
+                              onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                              placeholder="https://example.com/video.mp4"
+                            />
+                            <div className="relative">
+                              <Input
+                                type="file"
+                                accept="video/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleFileUpload(file, 'video');
+                                  }
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                disabled={uploading}
+                              />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                disabled={uploading}
+                                className="w-full"
+                              >
+                                {uploading ? 'Carregando...' : 'Upload'}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="image_position">Posição da Imagem</Label>
+                            <Select value={formData.image_position} onValueChange={(value) => {
+                              setFormData(prev => ({ ...prev, image_position: value }));
+                            }}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Posição da imagem" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="center">Centro</SelectItem>
+                                <SelectItem value="top">Topo</SelectItem>
+                                <SelectItem value="bottom">Fundo</SelectItem>
+                                <SelectItem value="left">Esquerda</SelectItem>
+                                <SelectItem value="right">Direita</SelectItem>
+                                <SelectItem value="top-left">Topo Esquerda</SelectItem>
+                                <SelectItem value="top-right">Topo Direita</SelectItem>
+                                <SelectItem value="bottom-left">Fundo Esquerda</SelectItem>
+                                <SelectItem value="bottom-right">Fundo Direita</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="image_fit">Ajuste da Imagem</Label>
+                            <Select value={formData.image_fit} onValueChange={(value) => {
+                              setFormData(prev => ({ ...prev, image_fit: value }));
+                            }}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Ajuste da imagem" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cover">Cobrir (pode cortar)</SelectItem>
+                                <SelectItem value="contain">Conter (imagem completa)</SelectItem>
+                                <SelectItem value="fill">Preencher (pode distorcer)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="position">Posição</Label>
+                            <Input
+                              id="position"
+                              type="number"
+                              value={formData.position}
+                              onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) }))}
+                              min="0"
+                            />
+                          </div>
+
+                          <div className="flex items-center space-x-2 pt-7">
+                            <Switch
+                              id="active"
+                              checked={formData.active}
+                              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
+                            />
+                            <Label htmlFor="active">Banner ativo</Label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="mobile_image_url">Imagem Mobile</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="mobile_image_url"
-                        value={formData.mobile_image_url}
-                        onChange={(e) => setFormData(prev => ({ ...prev, mobile_image_url: e.target.value }))}
-                        placeholder="https://example.com/mobile-image.jpg"
-                      />
-                      <div className="relative">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleFileUpload(file, 'mobile');
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          disabled={uploading}
-                        />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          disabled={uploading}
-                          className="w-full"
-                        >
-                          {uploading ? 'Carregando...' : 'Upload'}
-                        </Button>
+                  {/* Coluna direita - Preview e especificações */}
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Preview</h3>
+                      
+                      {formData.desktop_image_url && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Desktop</p>
+                          <div className="w-full h-32 bg-muted rounded-lg overflow-hidden border">
+                            <img
+                              src={formData.desktop_image_url}
+                              alt="Preview Desktop"
+                              className="w-full h-full object-cover"
+                              style={{
+                                objectFit: formData.image_fit as any,
+                                objectPosition: formData.image_position
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {formData.mobile_image_url && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Mobile</p>
+                          <div className="w-32 h-24 bg-muted rounded-lg overflow-hidden border mx-auto">
+                            <img
+                              src={formData.mobile_image_url}
+                              alt="Preview Mobile"
+                              className="w-full h-full object-cover"
+                              style={{
+                                objectFit: formData.image_fit as any,
+                                objectPosition: formData.image_position
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {!formData.desktop_image_url && !formData.mobile_image_url && (
+                        <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center border border-dashed">
+                          <p className="text-sm text-muted-foreground">Preview aparecerá aqui após upload</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Especificações</h3>
+                      
+                      <div className="bg-muted/50 p-4 rounded-lg">
+                        <p className="text-sm font-medium mb-2">📋 Especificações das Imagens</p>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p><strong>Desktop:</strong> Resolução recomendada 1920x1080 (16:9)</p>
+                          <p><strong>Mobile:</strong> Resolução recomendada 750x1334 (9:16)</p>
+                          <p><strong>Tamanho máximo:</strong> 2MB por arquivo</p>
+                          <p><strong>Formatos:</strong> JPG, PNG, WebP</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm font-medium mb-2">ℹ️ Dicas de posicionamento</p>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p><strong>Posição:</strong> Define qual parte da imagem será mostrada quando ela for maior que o container</p>
+                          <p><strong>Cobrir:</strong> Preenche todo o espaço, pode cortar partes da imagem</p>
+                          <p><strong>Conter:</strong> Mostra a imagem completa, pode deixar espaços em branco</p>
+                          <p><strong>Preencher:</strong> Força a imagem a ocupar todo o espaço, pode distorcer</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <p className="text-sm font-medium mb-2">📋 Especificações das Imagens</p>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p><strong>Desktop:</strong> Resolução recomendada 1920x1080 (16:9)</p>
-                      <p><strong>Mobile:</strong> Resolução recomendada 750x1334 (9:16)</p>
-                      <p><strong>Tamanho máximo:</strong> 2MB por arquivo</p>
-                      <p><strong>Formatos:</strong> JPG, PNG, WebP</p>
-                    </div>
-                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="video_url">Vídeo (opcional)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="video_url"
-                      value={formData.video_url}
-                      onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
-                      placeholder="https://example.com/video.mp4"
-                    />
-                    <div className="relative">
-                      <Input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleFileUpload(file, 'video');
-                          }
-                        }}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        disabled={uploading}
-                      />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        disabled={uploading}
-                        className="w-full"
-                      >
-                        {uploading ? 'Carregando...' : 'Upload'}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="image_position">Posição da Imagem</Label>
-                    <Select value={formData.image_position} onValueChange={(value) => {
-                      setFormData(prev => ({ ...prev, image_position: value }));
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Posição da imagem" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="center">Centro</SelectItem>
-                        <SelectItem value="top">Topo</SelectItem>
-                        <SelectItem value="bottom">Fundo</SelectItem>
-                        <SelectItem value="left">Esquerda</SelectItem>
-                        <SelectItem value="right">Direita</SelectItem>
-                        <SelectItem value="top-left">Topo Esquerda</SelectItem>
-                        <SelectItem value="top-right">Topo Direita</SelectItem>
-                        <SelectItem value="bottom-left">Fundo Esquerda</SelectItem>
-                        <SelectItem value="bottom-right">Fundo Direita</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="image_fit">Ajuste da Imagem</Label>
-                    <Select value={formData.image_fit} onValueChange={(value) => {
-                      setFormData(prev => ({ ...prev, image_fit: value }));
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Ajuste da imagem" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cover">Cobrir (pode cortar)</SelectItem>
-                        <SelectItem value="contain">Conter (imagem completa)</SelectItem>
-                        <SelectItem value="fill">Preencher (pode distorcer)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium mb-2">ℹ️ Dicas de posicionamento</p>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p><strong>Posição:</strong> Define qual parte da imagem será mostrada quando ela for maior que o container</p>
-                    <p><strong>Cobrir:</strong> Preenche todo o espaço, pode cortar partes da imagem</p>
-                    <p><strong>Conter:</strong> Mostra a imagem completa, pode deixar espaços em branco</p>
-                    <p><strong>Preencher:</strong> Força a imagem a ocupar todo o espaço, pode distorcer</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="position">Posição</Label>
-                    <Input
-                      id="position"
-                      type="number"
-                      value={formData.position}
-                      onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) }))}
-                      min="0"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2 pt-7">
-                    <Switch
-                      id="active"
-                      checked={formData.active}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
-                    />
-                    <Label htmlFor="active">Banner ativo</Label>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-2 pt-4 border-t">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
