@@ -300,12 +300,25 @@ export const ProductForm = () => {
   };
 
   const toggleDetailTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+    
     setProductDetails(prev => {
-      const exists = prev.find(detail => detail.template_id === templateId);
-      if (exists) {
-        return prev.filter(detail => detail.template_id !== templateId);
+      // Remove all templates of the same type first
+      const filteredDetails = prev.filter(detail => {
+        const detailTemplate = templates.find(t => t.id === detail.template_id);
+        return detailTemplate?.type !== template.type;
+      });
+      
+      // Check if this template was already selected
+      const wasSelected = prev.some(detail => detail.template_id === templateId);
+      
+      if (wasSelected) {
+        // If it was selected, just remove it (already filtered above)
+        return filteredDetails;
       } else {
-        return [...prev, { template_id: templateId }];
+        // If it wasn't selected, add it (replacing any other template of the same type)
+        return [...filteredDetails, { template_id: templateId }];
       }
     });
   };
@@ -336,6 +349,32 @@ export const ProductForm = () => {
       care_instructions: 'Instruções de cuidados e conservação'
     };
     return descriptions[type] || '';
+  };
+
+  // Function to get template content preview
+  const getTemplatePreview = (template: ProductDetailsTemplate) => {
+    if (!template.content) return 'Conteúdo não disponível';
+    
+    if (typeof template.content === 'string') {
+      // Remove HTML tags and get first 100 characters
+      const textContent = template.content.replace(/<[^>]*>/g, '').trim();
+      return textContent.length > 100 ? textContent.substring(0, 100) + '...' : textContent;
+    }
+    
+    // Handle JSON content
+    if (typeof template.content === 'object') {
+      if (template.content.text) {
+        return template.content.text.length > 100 
+          ? template.content.text.substring(0, 100) + '...' 
+          : template.content.text;
+      }
+      if (template.content.html) {
+        const textContent = template.content.html.replace(/<[^>]*>/g, '').trim();
+        return textContent.length > 100 ? textContent.substring(0, 100) + '...' : textContent;
+      }
+    }
+    
+    return 'Conteúdo disponível';
   };
 
   // Group templates by type
@@ -913,10 +952,7 @@ export const ProductForm = () => {
                                 {/* Preview do conteúdo */}
                                 <div className="mt-3 p-3 bg-muted/50 rounded-md">
                                   <p className="text-xs text-muted-foreground line-clamp-2">
-                                    {typeof template.content === 'string' 
-                                      ? template.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...'
-                                      : template.content?.text?.substring(0, 100) + '...' || 'Conteúdo disponível'
-                                    }
+                                    {getTemplatePreview(template)}
                                   </p>
                                 </div>
                               </div>
