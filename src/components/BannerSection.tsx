@@ -156,8 +156,10 @@ export const DualBannerSection = () => {
                 </>
               )}
               
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-black/30" />
+              {/* Overlay - only show when there's content */}
+              {(banner.title || banner.subtitle || banner.button_text) && (
+                <div className="absolute inset-0 bg-black/30" />
+              )}
               
               {/* Content */}
               <div className="relative h-full flex flex-col justify-center items-center text-center text-white p-6">
