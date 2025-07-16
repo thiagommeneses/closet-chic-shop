@@ -12,6 +12,8 @@ interface ProductSizeGuideProps {
   productImage?: string;
   selectedSize?: string;
   onSizeSelect?: (size: string) => void;
+  onAddToCart?: (size: string) => void;
+  price?: number;
 }
 
 export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
@@ -19,7 +21,9 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
   productName,
   productImage,
   selectedSize,
-  onSizeSelect
+  onSizeSelect,
+  onAddToCart,
+  price
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('size-guide');
@@ -72,7 +76,21 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
     if (onSizeSelect) {
       onSizeSelect(size);
     }
-    setIsOpen(false);
+    // Não fechar o popup automaticamente ao selecionar tamanho
+  };
+
+  const handleAddToCart = () => {
+    if (selectedSize && onAddToCart) {
+      onAddToCart(selectedSize);
+      setIsOpen(false);
+    }
+  };
+
+  const formatPrice = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
 
   return (
@@ -180,8 +198,12 @@ export const ProductSizeGuide: React.FC<ProductSizeGuideProps> = ({
               <Button onClick={() => setIsOpen(false)} variant="outline" className="flex-1">
                 Adicionar à wishlist
               </Button>
-              <Button onClick={() => setIsOpen(false)} className="flex-1">
-                Adicionar à sacola
+              <Button 
+                onClick={handleAddToCart} 
+                className="flex-1" 
+                disabled={!selectedSize}
+              >
+                {selectedSize ? `Adicionar à sacola - ${price ? formatPrice(price) : ''}` : 'Selecione um tamanho'}
               </Button>
             </div>
           </TabsContent>

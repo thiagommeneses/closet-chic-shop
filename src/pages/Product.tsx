@@ -284,6 +284,19 @@ export default function Product() {
                       productImage={currentImage}
                       selectedSize={selectedSize}
                       onSizeSelect={setSelectedSize}
+                      onAddToCart={(size) => {
+                        setSelectedSize(size);
+                        addItem({
+                          id: parseInt(product.id),
+                          name: product.name,
+                          price: product.sale_price || product.price,
+                          image: currentImage,
+                          size: size,
+                          quantity: 1
+                        });
+                        openCart();
+                      }}
+                      price={product.sale_price || product.price}
                     />
                   )}
                 </div>
