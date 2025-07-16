@@ -47,7 +47,7 @@ export const AdminCustomers = () => {
         .from('customers')
         .select(`
           *,
-          orders!left(id, total, status, created_at)
+          orders!customer_id(id, total, status, created_at)
         `)
         .order('created_at', { ascending: false });
 
@@ -78,7 +78,7 @@ export const AdminCustomers = () => {
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .in('customer_email', [customers.find(c => c.id === customerId)?.email])
+        .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
