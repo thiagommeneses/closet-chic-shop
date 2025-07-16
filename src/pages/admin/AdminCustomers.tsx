@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Users, Eye } from 'lucide-react';
+import { Search, Users, Eye, Mail, Phone, Calendar, DollarSign, Package, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -130,177 +131,315 @@ export const AdminCustomers = () => {
     );
   }
 
+  const totalRevenue = customers.reduce((sum, customer) => sum + (customer.total_spent || 0), 0);
+  const averageOrderValue = customers.length > 0 ? totalRevenue / customers.reduce((sum, customer) => sum + (customer.order_count || 0), 0) : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Clientes</h1>
-          <p className="text-muted-foreground">
-            Gerencie os clientes da sua loja
-          </p>
-        </div>
-        <Card className="p-4">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm font-medium">{customers.length} clientes</p>
-              <p className="text-xs text-muted-foreground">Total cadastrados</p>
-            </div>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Clientes</h1>
+            <p className="text-muted-foreground">
+              Gerencie os clientes da sua loja
+            </p>
           </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total de Clientes</p>
+                  <p className="text-2xl font-bold">{customers.length}</p>
+                </div>
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total de Pedidos</p>
+                  <p className="text-2xl font-bold">{customers.reduce((sum, customer) => sum + (customer.order_count || 0), 0)}</p>
+                </div>
+                <Package className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Receita Total</p>
+                  <p className="text-2xl font-bold">{formatPrice(totalRevenue)}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Ticket Médio</p>
+                  <p className="text-2xl font-bold">{formatPrice(averageOrderValue || 0)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, e-mail ou CPF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Customers Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Clientes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>E-mail</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>CPF</TableHead>
+                    <TableHead>Pedidos</TableHead>
+                    <TableHead>Total Gasto</TableHead>
+                    <TableHead>Cadastro</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCustomers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                            {customer.name.charAt(0).toUpperCase()}
+                          </div>
+                          {customer.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          {customer.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          {customer.phone || '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono">{customer.cpf || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {customer.order_count} pedidos
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatPrice(customer.total_spent || 0)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {formatDate(customer.created_at)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                loadCustomerOrders(customer.id);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Detalhes
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                                  {selectedCustomer?.name.charAt(0).toUpperCase()}
+                                </div>
+                                Detalhes do Cliente - {selectedCustomer?.name}
+                              </DialogTitle>
+                            </DialogHeader>
+                            {selectedCustomer && (
+                              <div className="space-y-6">
+                                {/* Customer Info Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <Card>
+                                    <CardHeader>
+                                      <CardTitle className="text-lg">Informações Pessoais</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                      <div className="flex items-center gap-3">
+                                        <Users className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{selectedCustomer.name}</p>
+                                          <p className="text-sm text-muted-foreground">Nome completo</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <Mail className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{selectedCustomer.email}</p>
+                                          <p className="text-sm text-muted-foreground">E-mail</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <Phone className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{selectedCustomer.phone || 'Não informado'}</p>
+                                          <p className="text-sm text-muted-foreground">Telefone</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <div className="h-4 w-4 text-muted-foreground flex items-center justify-center">📄</div>
+                                        <div>
+                                          <p className="font-medium font-mono">{selectedCustomer.cpf || 'Não informado'}</p>
+                                          <p className="text-sm text-muted-foreground">CPF</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{formatDate(selectedCustomer.created_at)}</p>
+                                          <p className="text-sm text-muted-foreground">Data de cadastro</p>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+
+                                  <Card>
+                                    <CardHeader>
+                                      <CardTitle className="text-lg">Estatísticas</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                      <div className="flex items-center gap-3">
+                                        <Package className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{selectedCustomer.order_count} pedidos</p>
+                                          <p className="text-sm text-muted-foreground">Total de pedidos</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{formatPrice(selectedCustomer.total_spent || 0)}</p>
+                                          <p className="text-sm text-muted-foreground">Valor total gasto</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                        <div>
+                                          <p className="font-medium">{
+                                            selectedCustomer.order_count ? 
+                                            formatPrice((selectedCustomer.total_spent || 0) / selectedCustomer.order_count) : 
+                                            formatPrice(0)
+                                          }</p>
+                                          <p className="text-sm text-muted-foreground">Ticket médio</p>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+
+                                {/* Orders History */}
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle className="text-lg">Histórico de Pedidos</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    {customerOrders.length > 0 ? (
+                                      <div className="overflow-x-auto">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead>Pedido</TableHead>
+                                              <TableHead>Data</TableHead>
+                                              <TableHead>Status</TableHead>
+                                              <TableHead>Valor</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {customerOrders.map((order) => (
+                                              <TableRow key={order.id}>
+                                                <TableCell className="font-mono">
+                                                  #{order.id.slice(0, 8)}
+                                                </TableCell>
+                                                <TableCell>{formatDate(order.created_at)}</TableCell>
+                                                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                                                <TableCell className="font-medium">
+                                                  {formatPrice(parseFloat(order.total))}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-8">
+                                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <p className="text-muted-foreground">
+                                          Nenhum pedido encontrado para este cliente
+                                        </p>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {filteredCustomers.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {searchTerm ? 'Nenhum cliente encontrado para a busca.' : 'Nenhum cliente cadastrado ainda.'}
+                </p>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
-
-      {/* Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome, e-mail ou CPF..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Customers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>E-mail</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>CPF</TableHead>
-                <TableHead>Pedidos</TableHead>
-                <TableHead>Total Gasto</TableHead>
-                <TableHead>Cadastro</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">
-                    {customer.name}
-                  </TableCell>
-                  <TableCell>{customer.email}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  <TableCell>{customer.cpf}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {customer.order_count} pedidos
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatPrice(customer.total_spent || 0)}
-                  </TableCell>
-                  <TableCell>{formatDate(customer.created_at)}</TableCell>
-                  <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            loadCustomerOrders(customer.id);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Detalhes do Cliente</DialogTitle>
-                        </DialogHeader>
-                        {selectedCustomer && (
-                          <div className="space-y-6">
-                            {/* Customer Info */}
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h3 className="font-semibold mb-2">Informações Pessoais</h3>
-                                <div className="space-y-2 text-sm">
-                                  <p><strong>Nome:</strong> {selectedCustomer.name}</p>
-                                  <p><strong>E-mail:</strong> {selectedCustomer.email}</p>
-                                  <p><strong>Telefone:</strong> {selectedCustomer.phone}</p>
-                                  <p><strong>CPF:</strong> {selectedCustomer.cpf}</p>
-                                  <p><strong>Cadastro:</strong> {formatDate(selectedCustomer.created_at)}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <h3 className="font-semibold mb-2">Estatísticas</h3>
-                                <div className="space-y-2 text-sm">
-                                  <p><strong>Total de Pedidos:</strong> {selectedCustomer.order_count}</p>
-                                  <p><strong>Valor Total Gasto:</strong> {formatPrice(selectedCustomer.total_spent || 0)}</p>
-                                  <p><strong>Ticket Médio:</strong> {
-                                    selectedCustomer.order_count ? 
-                                    formatPrice((selectedCustomer.total_spent || 0) / selectedCustomer.order_count) : 
-                                    formatPrice(0)
-                                  }</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Orders History */}
-                            <div>
-                              <h3 className="font-semibold mb-4">Histórico de Pedidos</h3>
-                              {customerOrders.length > 0 ? (
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Pedido</TableHead>
-                                      <TableHead>Data</TableHead>
-                                      <TableHead>Status</TableHead>
-                                      <TableHead>Valor</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {customerOrders.map((order) => (
-                                      <TableRow key={order.id}>
-                                        <TableCell className="font-mono">
-                                          {order.id.slice(0, 8)}
-                                        </TableCell>
-                                        <TableCell>{formatDate(order.created_at)}</TableCell>
-                                        <TableCell>{getStatusBadge(order.status)}</TableCell>
-                                        <TableCell className="font-medium">
-                                          {formatPrice(parseFloat(order.total))}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              ) : (
-                                <p className="text-muted-foreground text-center py-4">
-                                  Nenhum pedido encontrado
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {filteredCustomers.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {searchTerm ? 'Nenhum cliente encontrado para a busca.' : 'Nenhum cliente cadastrado ainda.'}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    </AdminLayout>
   );
 };
