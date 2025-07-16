@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export interface FavoriteItem {
   id: number | string;
@@ -14,6 +15,9 @@ interface FavoritesContextType {
   removeFromFavorites: (itemId: number | string) => void;
   isFavorite: (itemId: number | string) => boolean;
   toggleFavorite: (item: FavoriteItem) => void;
+  isOpen: boolean;
+  openFavorites: () => void;
+  closeFavorites: () => void;
 }
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
@@ -28,6 +32,8 @@ export const useFavorites = () => {
 
 export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadFavorites();
@@ -70,9 +76,25 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const toggleFavorite = (item: FavoriteItem) => {
     if (isFavorite(item.id)) {
       removeFromFavorites(item.id);
+      toast({
+        title: "Removido dos favoritos",
+        description: `${item.name} foi removido da sua lista de favoritos.`,
+      });
     } else {
       addToFavorites(item);
+      toast({
+        title: "Adicionado aos favoritos ❤️",
+        description: `${item.name} foi salvo na sua lista de favoritos.`,
+      });
     }
+  };
+
+  const openFavorites = () => {
+    setIsOpen(true);
+  };
+
+  const closeFavorites = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -82,7 +104,10 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         addToFavorites,
         removeFromFavorites,
         isFavorite,
-        toggleFavorite
+        toggleFavorite,
+        isOpen,
+        openFavorites,
+        closeFavorites
       }}
     >
       {children}

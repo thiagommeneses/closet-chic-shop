@@ -7,6 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { Cart } from "@/components/Cart";
+import { FavoritesDrawer } from "@/components/FavoritesDrawer";
 import Index from "./pages/Index";
 import Product from "./pages/Product";
 import Checkout from "./pages/Checkout";
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Cart />
+            <FavoritesDrawer />
           </BrowserRouter>
         </TooltipProvider>
       </AdminProvider>
