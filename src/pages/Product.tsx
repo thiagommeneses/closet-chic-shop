@@ -251,29 +251,25 @@ export default function Product() {
               <h1 className="text-2xl font-bold text-foreground mb-2">
                 {product.name}
               </h1>
-              {/* Dynamic Product Information */}
-              <div className="text-sm text-muted-foreground space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {product.sku && (
-                    <span className="font-medium">SKU: {product.sku}</span>
-                  )}
+              {/* Product SKU and Stock Status */}
+              <div className="space-y-2">
+                {product.sku && (
+                  <p className="text-muted-foreground" style={{ fontSize: '0.6rem' }}>
+                    SKU: {product.sku}
+                  </p>
+                )}
+                <div className="flex items-center">
                   {(product.stock_quantity || 0) > 0 ? (
-                    <span className="text-green-600 font-medium">• EM ESTOQUE</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-green-700">Em estoque</span>
+                    </div>
                   ) : (
-                    <span className="text-red-600 font-medium">• ESGOTADO</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <span className="text-sm font-medium text-red-700">Esgotado</span>
+                    </div>
                   )}
-                  {variations.filter(v => v.variation_type === 'size' && v.active !== false && v.stock_quantity > 0).length > 0 && (
-                    <span>
-                      • {variations
-                        .filter(v => v.variation_type === 'size' && v.active !== false && v.stock_quantity > 0)
-                        .map(v => v.variation_value)
-                        .join('/')
-                      }
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs">
-                  até {Math.min(12, Math.floor((product.sale_price || product.price) / 10))}x de {formatPrice((product.sale_price || product.price) / Math.min(12, Math.floor((product.sale_price || product.price) / 10)))} sem juros
                 </div>
               </div>
             </div>
