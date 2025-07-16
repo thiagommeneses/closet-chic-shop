@@ -33,6 +33,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { mapProductToCardData } from '@/utils/productUtils';
 import { ShippingCalculator } from '@/components/ShippingCalculator';
 import { supabase } from '@/integrations/supabase/client';
+import { renderTemplateContent } from '@/utils/templateUtils';
 
 export default function Product() {
   const { slug } = useParams<{ slug: string }>();
@@ -303,16 +304,12 @@ export default function Product() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-2 text-sm">
-                      <p>Consulte nossa tabela de medidas para escolher o tamanho ideal.</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(productDetails.size_guide.content).map(([size, measurements]: [string, any]) => (
-                          <div key={size}>
-                            <strong>{size}:</strong> {measurements.bust} | {measurements.waist} | {measurements.hip}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <div 
+                      className="prose prose-sm max-w-none text-sm"
+                      dangerouslySetInnerHTML={{ 
+                        __html: renderTemplateContent(productDetails.size_guide) 
+                      }}
+                    />
                   </AccordionContent>
                 </AccordionItem>
               )}
@@ -340,13 +337,12 @@ export default function Product() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-1 text-sm">
-                      <p><strong>Material:</strong> {productDetails.composition.content.materials?.join(', ')}</p>
-                      <p><strong>Origem:</strong> {productDetails.composition.content.origin}</p>
-                      {productDetails.composition.content.certifications?.length > 0 && (
-                        <p><strong>Certificações:</strong> {productDetails.composition.content.certifications.join(', ')}</p>
-                      )}
-                    </div>
+                    <div 
+                      className="prose prose-sm max-w-none text-sm"
+                      dangerouslySetInnerHTML={{ 
+                        __html: renderTemplateContent(productDetails.composition) 
+                      }}
+                    />
                   </AccordionContent>
                 </AccordionItem>
               )}
@@ -360,13 +356,12 @@ export default function Product() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-1 text-sm">
-                      <p>• {productDetails.care_instructions.content.washing}</p>
-                      <p>• {productDetails.care_instructions.content.drying}</p>
-                      <p>• {productDetails.care_instructions.content.ironing}</p>
-                      <p>• {productDetails.care_instructions.content.bleaching}</p>
-                      <p>• {productDetails.care_instructions.content.dry_cleaning}</p>
-                    </div>
+                    <div 
+                      className="prose prose-sm max-w-none text-sm"
+                      dangerouslySetInnerHTML={{ 
+                        __html: renderTemplateContent(productDetails.care_instructions) 
+                      }}
+                    />
                   </AccordionContent>
                 </AccordionItem>
               )}

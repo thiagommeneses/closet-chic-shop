@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, FileText, Ruler, Package, Heart } from 'lucide-react';
+import { getEditableContent, prepareContentForSave } from '@/utils/templateUtils';
 
 interface ProductDetailsTemplate {
   id: string;
@@ -20,6 +21,7 @@ interface ProductDetailsTemplate {
   content: any;
   active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 interface TemplateFormData {
@@ -77,17 +79,7 @@ export const AdminProductTemplates = () => {
 
   const handleEdit = (template: ProductDetailsTemplate) => {
     setEditingTemplate(template);
-    let contentText = '';
-    
-    if (typeof template.content === 'string') {
-      contentText = template.content;
-    } else if (template.content && template.content.html) {
-      contentText = template.content.html;
-    } else if (template.content && template.content.text) {
-      contentText = template.content.text;
-    } else {
-      contentText = JSON.stringify(template.content, null, 2);
-    }
+    const contentText = getEditableContent(template);
     
     setFormData({
       name: template.name,
@@ -106,7 +98,7 @@ export const AdminProductTemplates = () => {
       const templateData = {
         name: formData.name,
         type: formData.type,
-        content: { html: formData.content },
+        content: prepareContentForSave(formData.content),
         active: formData.active
       };
 
