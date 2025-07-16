@@ -11,6 +11,9 @@ export interface Banner {
   button_link?: string;
   image_url?: string;
   video_url?: string;
+  description?: string;
+  tips?: string;
+  information?: string;
   position: number;
   active: boolean;
   created_at: string;

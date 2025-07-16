@@ -24,6 +24,9 @@ interface Banner {
   button_link?: string;
   image_url?: string;
   video_url?: string;
+  description?: string;
+  tips?: string;
+  information?: string;
   position: number;
   active: boolean;
   created_at: string;
@@ -39,6 +42,9 @@ interface BannerFormData {
   button_link: string;
   image_url: string;
   video_url: string;
+  description: string;
+  tips: string;
+  information: string;
   position: number;
   active: boolean;
 }
@@ -49,6 +55,7 @@ export const AdminBanners = () => {
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState<BannerFormData>({
     name: '',
@@ -59,6 +66,9 @@ export const AdminBanners = () => {
     button_link: '',
     image_url: '',
     video_url: '',
+    description: '',
+    tips: '',
+    information: '',
     position: 0,
     active: true
   });
@@ -96,10 +106,55 @@ export const AdminBanners = () => {
       button_link: '',
       image_url: '',
       video_url: '',
+      description: '',
+      tips: '',
+      information: '',
       position: 0,
       active: true
     });
     setEditingBanner(null);
+  };
+
+  const handleFileUpload = async (file: File, type: 'image' | 'video') => {
+    try {
+      setUploading(true);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${type}s/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      if (type === 'image') {
+        setFormData(prev => ({ ...prev, image_url: publicUrl }));
+      } else {
+        setFormData(prev => ({ ...prev, video_url: publicUrl }));
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: `${type === 'image' ? 'Imagem' : 'Vídeo'} carregado com sucesso.`,
+      });
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Erro",
+        description: `Erro ao carregar ${type === 'image' ? 'imagem' : 'vídeo'}: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleEdit = (banner: Banner) => {
@@ -113,6 +168,9 @@ export const AdminBanners = () => {
       button_link: banner.button_link || '',
       image_url: banner.image_url || '',
       video_url: banner.video_url || '',
+      description: banner.description || '',
+      tips: banner.tips || '',
+      information: banner.information || '',
       position: banner.position,
       active: banner.active
     });
@@ -133,6 +191,9 @@ export const AdminBanners = () => {
         button_link: formData.button_link || null,
         image_url: formData.image_url || null,
         video_url: formData.video_url || null,
+        description: formData.description || null,
+        tips: formData.tips || null,
+        information: formData.information || null,
         position: formData.position,
         active: formData.active
       };
@@ -379,22 +440,103 @@ export const AdminBanners = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="image_url">URL da Imagem</Label>
-                  <Input
-                    id="image_url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                    placeholder="https://example.com/image.jpg"
+                  <Label htmlFor="image_url">Imagem</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="image_url"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                    <div className="relative">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(file, 'image');
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={uploading}
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        disabled={uploading}
+                        className="w-full"
+                      >
+                        {uploading ? 'Carregando...' : 'Upload'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="video_url">Vídeo (opcional)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="video_url"
+                      value={formData.video_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                      placeholder="https://example.com/video.mp4"
+                    />
+                    <div className="relative">
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(file, 'video');
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={uploading}
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        disabled={uploading}
+                        className="w-full"
+                      >
+                        {uploading ? 'Carregando...' : 'Upload'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Descrição do banner"
+                    rows={3}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="video_url">URL do Vídeo (opcional)</Label>
-                  <Input
-                    id="video_url"
-                    value={formData.video_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
-                    placeholder="https://example.com/video.mp4"
+                  <Label htmlFor="tips">Dicas</Label>
+                  <Textarea
+                    id="tips"
+                    value={formData.tips}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tips: e.target.value }))}
+                    placeholder="Dicas relacionadas ao banner"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="information">Informações</Label>
+                  <Textarea
+                    id="information"
+                    value={formData.information}
+                    onChange={(e) => setFormData(prev => ({ ...prev, information: e.target.value }))}
+                    placeholder="Informações adicionais"
+                    rows={3}
                   />
                 </div>
 

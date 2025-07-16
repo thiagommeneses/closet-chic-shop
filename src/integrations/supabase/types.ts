@@ -44,11 +44,14 @@ export type Database = {
           button_link: string | null
           button_text: string | null
           created_at: string
+          description: string | null
           id: string
           image_url: string | null
+          information: string | null
           name: string
           position: number | null
           subtitle: string | null
+          tips: string | null
           title: string | null
           type: string
           updated_at: string
@@ -59,11 +62,14 @@ export type Database = {
           button_link?: string | null
           button_text?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_url?: string | null
+          information?: string | null
           name: string
           position?: number | null
           subtitle?: string | null
+          tips?: string | null
           title?: string | null
           type: string
           updated_at?: string
@@ -74,11 +80,14 @@ export type Database = {
           button_link?: string | null
           button_text?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_url?: string | null
+          information?: string | null
           name?: string
           position?: number | null
           subtitle?: string | null
+          tips?: string | null
           title?: string | null
           type?: string
           updated_at?: string
