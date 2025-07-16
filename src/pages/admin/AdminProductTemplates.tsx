@@ -3,7 +3,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -81,6 +81,8 @@ export const AdminProductTemplates = () => {
     
     if (typeof template.content === 'string') {
       contentText = template.content;
+    } else if (template.content && template.content.html) {
+      contentText = template.content.html;
     } else if (template.content && template.content.text) {
       contentText = template.content.text;
     } else {
@@ -101,19 +103,10 @@ export const AdminProductTemplates = () => {
     setLoading(true);
 
     try {
-      let content: any;
-      try {
-        // Try to parse as JSON first
-        content = JSON.parse(formData.content);
-      } catch {
-        // If JSON parsing fails, store as plain text
-        content = formData.content;
-      }
-
       const templateData = {
         name: formData.name,
         type: formData.type,
-        content: content,
+        content: { html: formData.content },
         active: formData.active
       };
 
@@ -308,16 +301,14 @@ Dicas importantes:
 
                 <div className="space-y-2">
                   <Label htmlFor="content">Conteúdo *</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(content) => setFormData(prev => ({ ...prev, content }))}
                     placeholder="Digite o conteúdo do template..."
-                    rows={12}
-                    required
+                    className="min-h-[200px]"
                   />
                   <p className="text-sm text-muted-foreground">
-                    O conteúdo será exibido na página do produto conforme digitado acima
+                    Use as ferramentas de formatação para criar conteúdo rico com negrito, itálico, listas e títulos
                   </p>
                 </div>
 
@@ -403,13 +394,14 @@ Dicas importantes:
                       </CardHeader>
                       <CardContent>
                         <div className="text-sm">
-                          <div className="p-4 bg-muted rounded-lg">
-                            <div className="whitespace-pre-wrap">
-                              {typeof template.content === 'string' 
-                                ? template.content 
-                                : template.content?.text || JSON.stringify(template.content, null, 2)
-                              }
-                            </div>
+                          <div className="p-4 bg-muted rounded-lg prose prose-sm max-w-none">
+                            <div 
+                              dangerouslySetInnerHTML={{
+                                __html: typeof template.content === 'string' 
+                                  ? template.content 
+                                  : template.content?.html || template.content?.text || JSON.stringify(template.content, null, 2)
+                              }}
+                            />
                           </div>
                         </div>
                       </CardContent>
