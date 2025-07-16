@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface FavoriteItem {
   id: number | string;
@@ -8,7 +8,25 @@ export interface FavoriteItem {
   slug?: string;
 }
 
+interface FavoritesContextType {
+  favorites: FavoriteItem[];
+  addToFavorites: (item: FavoriteItem) => void;
+  removeFromFavorites: (itemId: number | string) => void;
+  isFavorite: (itemId: number | string) => boolean;
+  toggleFavorite: (item: FavoriteItem) => void;
+}
+
+const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
+
 export const useFavorites = () => {
+  const context = useContext(FavoritesContext);
+  if (!context) {
+    throw new Error('useFavorites must be used within a FavoritesProvider');
+  }
+  return context;
+};
+
+export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
   useEffect(() => {
@@ -57,11 +75,17 @@ export const useFavorites = () => {
     }
   };
 
-  return {
-    favorites,
-    addToFavorites,
-    removeFromFavorites,
-    isFavorite,
-    toggleFavorite
-  };
+  return (
+    <FavoritesContext.Provider
+      value={{
+        favorites,
+        addToFavorites,
+        removeFromFavorites,
+        isFavorite,
+        toggleFavorite
+      }}
+    >
+      {children}
+    </FavoritesContext.Provider>
+  );
 };

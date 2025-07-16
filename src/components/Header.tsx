@@ -3,7 +3,7 @@ import { Search, User, Heart, ShoppingBag, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/contexts/CartContext';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import logo from '@/assets/closet-collection-logo.png';
 
 export const Header = () => {
