@@ -54,7 +54,7 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[120px] p-3',
+        class: 'tiptap-editor focus:outline-none min-h-[120px] p-3',
       },
     },
   })
@@ -156,7 +156,7 @@ export function RichTextEditor({
       
       <EditorContent 
         editor={editor} 
-        className="prose prose-sm max-w-none"
+        className="max-w-none text-foreground"
         placeholder={placeholder}
       />
     </div>
