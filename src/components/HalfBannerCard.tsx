@@ -12,7 +12,7 @@ export const HalfBannerCard = ({ banner }: HalfBannerCardProps) => {
   return (
     <div className="relative group">
       {/* Container with aspect ratio */}
-      <div className="relative aspect-[4/3] md:aspect-[3/2] overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[29/10] overflow-hidden rounded-xl bg-muted">
         {/* Background Image or Video */}
         {banner.video_url ? (
           <video
