@@ -46,6 +46,7 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [variations, setVariations] = useState<any[]>([]);
   const [productDetails, setProductDetails] = useState<any>({});
   const [selectedShipping, setSelectedShipping] = useState<any>(null);
@@ -273,7 +274,7 @@ export default function Product() {
             </div>
 
             {/* Size Selector */}
-            {variations.filter(v => v.variation_type === 'size').length > 0 && (
+            {variations.filter(v => v.variation_type === 'size' && v.active !== false).length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">TAMANHO</label>
@@ -302,9 +303,9 @@ export default function Product() {
                     />
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {variations
-                    .filter(v => v.variation_type === 'size')
+                    .filter(v => v.variation_type === 'size' && v.active !== false)
                     .map((variation) => (
                       <Button
                         key={variation.id}
@@ -312,11 +313,76 @@ export default function Product() {
                         size="sm"
                         onClick={() => setSelectedSize(variation.variation_value)}
                         className="w-12 h-12"
+                        disabled={variation.stock_quantity === 0}
                       >
                         {variation.variation_value}
                       </Button>
                     ))}
                 </div>
+              </div>
+            )}
+
+            {/* Color Selector */}
+            {variations.filter(v => v.variation_type === 'color' && v.active !== false).length > 0 && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium">COR</label>
+                <div className="flex gap-2 flex-wrap">
+                  {variations
+                    .filter(v => v.variation_type === 'color' && v.active !== false)
+                    .map((variation) => (
+                      <Button
+                        key={variation.id}
+                        variant={selectedColor === variation.variation_value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedColor(variation.variation_value)}
+                        className="min-w-16 h-10"
+                        disabled={variation.stock_quantity === 0}
+                      >
+                        {variation.variation_value}
+                      </Button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Other Variations (Material, Style, etc.) */}
+            {variations.filter(v => !['size', 'color'].includes(v.variation_type) && v.active !== false).length > 0 && (
+              <div className="space-y-3">
+                {Object.entries(
+                  variations
+                    .filter(v => !['size', 'color'].includes(v.variation_type) && v.active !== false)
+                    .reduce((acc, variation) => {
+                      if (!acc[variation.variation_type]) {
+                        acc[variation.variation_type] = [];
+                      }
+                      acc[variation.variation_type].push(variation);
+                      return acc;
+                    }, {} as Record<string, any[]>)
+                ).map(([type, typeVariations]) => (
+                  <div key={type} className="space-y-2">
+                    <label className="text-sm font-medium">
+                      {type === 'material' ? 'MATERIAL' : 
+                       type === 'style' ? 'ESTILO' : 
+                       type.toUpperCase()}
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {(typeVariations as any[]).map((variation) => (
+                        <Button
+                          key={variation.id}
+                          variant="outline"
+                          size="sm"
+                          className="min-w-16 h-10"
+                          disabled={variation.stock_quantity === 0}
+                        >
+                          {variation.variation_value}
+                          {variation.stock_quantity === 0 && (
+                            <span className="ml-1 text-xs text-muted-foreground">(Esgotado)</span>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

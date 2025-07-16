@@ -761,13 +761,18 @@ export const ProductForm = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button type="button" onClick={addVariation} className="mb-4">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar Variação
-                  </Button>
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      {variations.filter(v => v.active).length} de {variations.length} variações ativas
+                    </div>
+                    <Button type="button" onClick={addVariation}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Variação
+                    </Button>
+                  </div>
 
                   {variations.map((variation, index) => (
-                    <div key={index} className="grid grid-cols-6 gap-4 items-end p-4 border rounded-lg">
+                    <div key={index} className="grid grid-cols-7 gap-4 items-end p-4 border rounded-lg">
                       <div className="space-y-2">
                         <Label>Tipo</Label>
                         <Select
@@ -823,6 +828,20 @@ export const ProductForm = () => {
                           onChange={(e) => updateVariation(index, 'sku', e.target.value)}
                           placeholder="SKU-001"
                         />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Ativo</Label>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`variation-active-${index}`}
+                            checked={variation.active}
+                            onCheckedChange={(checked) => updateVariation(index, 'active', checked)}
+                          />
+                          <Label htmlFor={`variation-active-${index}`} className="text-sm">
+                            Exibir
+                          </Label>
+                        </div>
                       </div>
 
                       <Button
