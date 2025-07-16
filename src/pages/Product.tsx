@@ -530,45 +530,33 @@ export default function Product() {
             <TabsContent value="details" className="mt-6">
               <Card>
                 <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">Especificações</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Peso:</span>
-                            <span>{product.weight_grams || 500}g</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Dimensões:</span>
-                            <span>{product.length_cm || 20} x {product.width_cm || 15} x {product.height_cm || 10} cm</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Material:</span>
-                            <span>Algodão Premium</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-semibold mb-2">Cuidados</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Check className="h-3 w-3 text-green-500" />
-                            <span>Lavagem à máquina</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="h-3 w-3 text-green-500" />
-                            <span>Não usar alvejante</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="h-3 w-3 text-green-500" />
-                            <span>Secar à sombra</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                   <div className="space-y-4">
+                     <div>
+                       <h4 className="font-semibold mb-4">Especificações do Produto</h4>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="space-y-3">
+                           <div className="flex justify-between py-2 border-b border-muted">
+                             <span className="text-sm font-medium">Peso:</span>
+                             <span className="text-sm">{product.weight_grams || 500}g</span>
+                           </div>
+                           <div className="flex justify-between py-2 border-b border-muted">
+                             <span className="text-sm font-medium">Dimensões:</span>
+                             <span className="text-sm">{product.length_cm || 20} x {product.width_cm || 15} x {product.height_cm || 10} cm</span>
+                           </div>
+                         </div>
+                         <div className="space-y-3">
+                           <div className="flex justify-between py-2 border-b border-muted">
+                             <span className="text-sm font-medium">SKU:</span>
+                             <span className="text-sm">{product.sku || 'N/A'}</span>
+                           </div>
+                           <div className="flex justify-between py-2 border-b border-muted">
+                             <span className="text-sm font-medium">Categoria:</span>
+                             <span className="text-sm">Moda Feminina</span>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
