@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, FileText, Ruler, Package, Heart } from 'lucide-react';
 import { getEditableContent, prepareContentForSave } from '@/utils/templateUtils';
+import { SizeGuideBuilder } from '@/components/admin/SizeGuideBuilder';
 
 interface ProductDetailsTemplate {
   id: string;
@@ -293,15 +294,24 @@ Dicas importantes:
 
                 <div className="space-y-2">
                   <Label htmlFor="content">Conteúdo *</Label>
-                  <RichTextEditor
-                    content={formData.content}
-                    onChange={(content) => setFormData(prev => ({ ...prev, content }))}
-                    placeholder="Digite o conteúdo do template..."
-                    className="min-h-[200px]"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Use as ferramentas de formatação para criar conteúdo rico com negrito, itálico, listas e títulos
-                  </p>
+                  {formData.type === 'size_guide' ? (
+                    <SizeGuideBuilder
+                      initialContent={formData.content}
+                      onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                    />
+                  ) : (
+                    <>
+                      <RichTextEditor
+                        content={formData.content}
+                        onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                        placeholder="Digite o conteúdo do template..."
+                        className="min-h-[200px]"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Use as ferramentas de formatação para criar conteúdo rico com negrito, itálico, listas e títulos
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">

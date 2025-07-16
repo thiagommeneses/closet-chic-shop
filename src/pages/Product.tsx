@@ -34,6 +34,7 @@ import { mapProductToCardData } from '@/utils/productUtils';
 import { ShippingCalculator } from '@/components/ShippingCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { renderTemplateContent } from '@/utils/templateUtils';
+import { ProductSizeGuide } from '@/components/ProductSizeGuide';
 
 export default function Product() {
   const { slug } = useParams<{ slug: string }>();
@@ -274,7 +275,18 @@ export default function Product() {
             {/* Size Selector */}
             {variations.filter(v => v.variation_type === 'size').length > 0 && (
               <div className="space-y-3">
-                <label className="text-sm font-medium">TAMANHO</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">TAMANHO</label>
+                  {productDetails.size_guide && (
+                    <ProductSizeGuide
+                      sizeGuideContent={renderTemplateContent(productDetails.size_guide)}
+                      productName={product.name}
+                      productImage={currentImage}
+                      selectedSize={selectedSize}
+                      onSizeSelect={setSelectedSize}
+                    />
+                  )}
+                </div>
                 <div className="flex gap-2">
                   {variations
                     .filter(v => v.variation_type === 'size')
@@ -295,24 +307,6 @@ export default function Product() {
 
             {/* Collapsible Product Details */}
             <Accordion type="single" collapsible className="w-full">
-              {productDetails.size_guide && (
-                <AccordionItem value="measurements">
-                  <AccordionTrigger className="text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <Ruler className="h-4 w-4" />
-                      GUIA DE MEDIDAS
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div 
-                      className="prose prose-sm max-w-none text-sm"
-                      dangerouslySetInnerHTML={{ 
-                        __html: renderTemplateContent(productDetails.size_guide) 
-                      }}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              )}
 
               <AccordionItem value="description">
                 <AccordionTrigger className="text-sm font-medium">
