@@ -3,12 +3,14 @@ import { Search, User, Heart, ShoppingBag, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/contexts/CartContext';
+import { useFavorites } from '@/hooks/useFavorites';
 import logo from '@/assets/closet-collection-logo.png';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { totalItems, toggleCart } = useCart();
+  const { favorites } = useFavorites();
 
   const navigationItems = [
     'Toda Loja',
@@ -69,9 +71,11 @@ export const Header = () => {
             </Button>
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
-              </span>
+              {favorites.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {favorites.length}
+                </span>
+              )}
             </Button>
             <Button 
               variant="ghost" 
