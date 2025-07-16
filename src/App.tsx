@@ -17,6 +17,7 @@ import { ProductForm } from "./pages/admin/ProductForm";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AdminProductTemplates } from "./pages/admin/AdminProductTemplates";
+import { AdminBanners } from "./pages/admin/AdminBanners";
 
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/admin/products/new" element={<ProductForm />} />
               <Route path="/admin/products/:id/edit" element={<ProductForm />} />
               <Route path="/admin/product-templates" element={<AdminProductTemplates />} />
+              <Route path="/admin/banners" element={<AdminBanners />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               
