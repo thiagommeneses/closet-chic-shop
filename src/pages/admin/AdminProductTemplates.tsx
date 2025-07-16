@@ -248,7 +248,7 @@ Dicas importantes:
                 Novo Template
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingTemplate ? 'Editar Template' : 'Novo Template'}

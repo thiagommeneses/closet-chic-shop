@@ -176,7 +176,11 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
     }
   }, [sizes, instructions, productImage, isInitialized]);
 
-  const addSize = () => {
+  const addSize = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const newSize: SizeEntry = {
       size: '',
       measurements: {}
@@ -189,7 +193,11 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
     setSizes([...sizes, newSize]);
   };
 
-  const removeSize = (index: number) => {
+  const removeSize = (index: number, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSizes(sizes.filter((_, i) => i !== index));
   };
 
@@ -209,7 +217,9 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
     setSizes(newSizes);
   };
 
-  const addCustomMeasurement = () => {
+  const addCustomMeasurement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const newMeasurement = prompt('Nome da medida:');
     if (newMeasurement && !customMeasurements.includes(newMeasurement)) {
       setCustomMeasurements([...customMeasurements, newMeasurement]);
@@ -275,17 +285,23 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
                   {customMeasurements.map(measurement => (
                     <Badge key={measurement} variant="secondary" className="flex items-center gap-1">
                       {getMeasurementLabel(measurement)}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeCustomMeasurement(measurement)}
-                        className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      >
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            removeCustomMeasurement(measurement);
+                          }}
+                          className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        >
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </Badge>
                   ))}
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={addCustomMeasurement}
@@ -323,9 +339,10 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
                         <Badge variant="outline">{size.size || 'Novo'}</Badge>
                       </div>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeSize(index)}
+                        onClick={(e) => removeSize(index, e)}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
