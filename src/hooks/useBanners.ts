@@ -9,11 +9,9 @@ export interface Banner {
   subtitle?: string;
   button_text?: string;
   button_link?: string;
-  image_url?: string;
+  desktop_image_url?: string;
+  mobile_image_url?: string;
   video_url?: string;
-  description?: string;
-  tips?: string;
-  information?: string;
   position: number;
   active: boolean;
   created_at: string;

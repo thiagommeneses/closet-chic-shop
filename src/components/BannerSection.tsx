@@ -102,10 +102,18 @@ export const DualBannerSection = () => {
                   playsInline
                 />
               ) : (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105"
-                  style={{ backgroundImage: `url(${banner.image_url})` }}
-                />
+                <>
+                  {/* Desktop Image */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block"
+                    style={{ backgroundImage: `url(${banner.desktop_image_url})` }}
+                  />
+                  {/* Mobile Image */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden"
+                    style={{ backgroundImage: `url(${banner.mobile_image_url || banner.desktop_image_url})` }}
+                  />
+                </>
               )}
               
               {/* Overlay */}

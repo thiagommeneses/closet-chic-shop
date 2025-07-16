@@ -22,11 +22,9 @@ interface Banner {
   subtitle?: string;
   button_text?: string;
   button_link?: string;
-  image_url?: string;
+  desktop_image_url?: string;
+  mobile_image_url?: string;
   video_url?: string;
-  description?: string;
-  tips?: string;
-  information?: string;
   position: number;
   active: boolean;
   created_at: string;
@@ -40,11 +38,9 @@ interface BannerFormData {
   subtitle: string;
   button_text: string;
   button_link: string;
-  image_url: string;
+  desktop_image_url: string;
+  mobile_image_url: string;
   video_url: string;
-  description: string;
-  tips: string;
-  information: string;
   position: number;
   active: boolean;
 }
@@ -64,11 +60,9 @@ export const AdminBanners = () => {
     subtitle: '',
     button_text: '',
     button_link: '',
-    image_url: '',
+    desktop_image_url: '',
+    mobile_image_url: '',
     video_url: '',
-    description: '',
-    tips: '',
-    information: '',
     position: 0,
     active: true
   });
@@ -104,24 +98,22 @@ export const AdminBanners = () => {
       subtitle: '',
       button_text: '',
       button_link: '',
-      image_url: '',
+      desktop_image_url: '',
+      mobile_image_url: '',
       video_url: '',
-      description: '',
-      tips: '',
-      information: '',
       position: 0,
       active: true
     });
     setEditingBanner(null);
   };
 
-  const handleFileUpload = async (file: File, type: 'image' | 'video') => {
+  const handleFileUpload = async (file: File, type: 'desktop' | 'mobile' | 'video') => {
     try {
       setUploading(true);
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${type}s/${fileName}`;
+      const filePath = `${type === 'video' ? 'videos' : 'images'}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('products')
@@ -135,21 +127,23 @@ export const AdminBanners = () => {
         .from('products')
         .getPublicUrl(filePath);
 
-      if (type === 'image') {
-        setFormData(prev => ({ ...prev, image_url: publicUrl }));
+      if (type === 'desktop') {
+        setFormData(prev => ({ ...prev, desktop_image_url: publicUrl }));
+      } else if (type === 'mobile') {
+        setFormData(prev => ({ ...prev, mobile_image_url: publicUrl }));
       } else {
         setFormData(prev => ({ ...prev, video_url: publicUrl }));
       }
 
       toast({
         title: "Sucesso!",
-        description: `${type === 'image' ? 'Imagem' : 'Vídeo'} carregado com sucesso.`,
+        description: `${type === 'video' ? 'Vídeo' : 'Imagem'} carregado com sucesso.`,
       });
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
         title: "Erro",
-        description: `Erro ao carregar ${type === 'image' ? 'imagem' : 'vídeo'}: ${error.message}`,
+        description: `Erro ao carregar ${type === 'video' ? 'vídeo' : 'imagem'}: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -166,11 +160,9 @@ export const AdminBanners = () => {
       subtitle: banner.subtitle || '',
       button_text: banner.button_text || '',
       button_link: banner.button_link || '',
-      image_url: banner.image_url || '',
+      desktop_image_url: banner.desktop_image_url || '',
+      mobile_image_url: banner.mobile_image_url || '',
       video_url: banner.video_url || '',
-      description: banner.description || '',
-      tips: banner.tips || '',
-      information: banner.information || '',
       position: banner.position,
       active: banner.active
     });
@@ -189,11 +181,9 @@ export const AdminBanners = () => {
         subtitle: formData.subtitle || null,
         button_text: formData.button_text || null,
         button_link: formData.button_link || null,
-        image_url: formData.image_url || null,
+        desktop_image_url: formData.desktop_image_url || null,
+        mobile_image_url: formData.mobile_image_url || null,
         video_url: formData.video_url || null,
-        description: formData.description || null,
-        tips: formData.tips || null,
-        information: formData.information || null,
         position: formData.position,
         active: formData.active
       };
@@ -439,36 +429,82 @@ export const AdminBanners = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">Imagem</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="image_url"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                      placeholder="https://example.com/image.jpg"
-                    />
-                    <div className="relative">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="desktop_image_url">Imagem Desktop</Label>
+                    <div className="flex gap-2">
                       <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            handleFileUpload(file, 'image');
-                          }
-                        }}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        disabled={uploading}
+                        id="desktop_image_url"
+                        value={formData.desktop_image_url}
+                        onChange={(e) => setFormData(prev => ({ ...prev, desktop_image_url: e.target.value }))}
+                        placeholder="https://example.com/desktop-image.jpg"
                       />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        disabled={uploading}
-                        className="w-full"
-                      >
-                        {uploading ? 'Carregando...' : 'Upload'}
-                      </Button>
+                      <div className="relative">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileUpload(file, 'desktop');
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          disabled={uploading}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          disabled={uploading}
+                          className="w-full"
+                        >
+                          {uploading ? 'Carregando...' : 'Upload'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile_image_url">Imagem Mobile</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="mobile_image_url"
+                        value={formData.mobile_image_url}
+                        onChange={(e) => setFormData(prev => ({ ...prev, mobile_image_url: e.target.value }))}
+                        placeholder="https://example.com/mobile-image.jpg"
+                      />
+                      <div className="relative">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileUpload(file, 'mobile');
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          disabled={uploading}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          disabled={uploading}
+                          className="w-full"
+                        >
+                          {uploading ? 'Carregando...' : 'Upload'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm font-medium mb-2">📋 Especificações das Imagens</p>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p><strong>Desktop:</strong> Resolução recomendada 1920x1080 (16:9)</p>
+                      <p><strong>Mobile:</strong> Resolução recomendada 750x1334 (9:16)</p>
+                      <p><strong>Tamanho máximo:</strong> 2MB por arquivo</p>
+                      <p><strong>Formatos:</strong> JPG, PNG, WebP</p>
                     </div>
                   </div>
                 </div>
@@ -507,38 +543,6 @@ export const AdminBanners = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descrição do banner"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tips">Dicas</Label>
-                  <Textarea
-                    id="tips"
-                    value={formData.tips}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tips: e.target.value }))}
-                    placeholder="Dicas relacionadas ao banner"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="information">Informações</Label>
-                  <Textarea
-                    id="information"
-                    value={formData.information}
-                    onChange={(e) => setFormData(prev => ({ ...prev, information: e.target.value }))}
-                    placeholder="Informações adicionais"
-                    rows={3}
-                  />
-                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -590,10 +594,10 @@ export const AdminBanners = () => {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            {banner.image_url && <Image className="h-4 w-4 text-primary" />}
-                            {banner.video_url && <Video className="h-4 w-4 text-primary" />}
-                          </div>
+                           <div className="p-2 bg-primary/10 rounded-lg">
+                             {banner.desktop_image_url && <Image className="h-4 w-4 text-primary" />}
+                             {banner.video_url && <Video className="h-4 w-4 text-primary" />}
+                           </div>
                           <div>
                             <CardTitle className="text-lg">{banner.name}</CardTitle>
                             <CardDescription className="flex items-center space-x-2">
@@ -659,35 +663,41 @@ export const AdminBanners = () => {
                             {banner.button_text && <p><strong>Botão:</strong> {banner.button_text}</p>}
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Mídia</p>
-                          <div className="text-sm text-muted-foreground">
-                            {banner.image_url && (
-                              <div className="flex items-center space-x-2">
-                                <Image className="h-4 w-4" />
-                                <span>Imagem configurada</span>
-                              </div>
-                            )}
-                            {banner.video_url && (
-                              <div className="flex items-center space-x-2">
-                                <Video className="h-4 w-4" />
-                                <span>Vídeo configurado</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Preview</p>
-                          {banner.image_url && (
-                            <div className="w-full h-16 bg-muted rounded-lg overflow-hidden">
-                              <img
-                                src={banner.image_url}
-                                alt={banner.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                        </div>
+                         <div className="space-y-2">
+                           <p className="text-sm font-medium">Mídia</p>
+                           <div className="text-sm text-muted-foreground">
+                             {banner.desktop_image_url && (
+                               <div className="flex items-center space-x-2">
+                                 <Image className="h-4 w-4" />
+                                 <span>Imagem Desktop</span>
+                               </div>
+                             )}
+                             {banner.mobile_image_url && (
+                               <div className="flex items-center space-x-2">
+                                 <Image className="h-4 w-4" />
+                                 <span>Imagem Mobile</span>
+                               </div>
+                             )}
+                             {banner.video_url && (
+                               <div className="flex items-center space-x-2">
+                                 <Video className="h-4 w-4" />
+                                 <span>Vídeo configurado</span>
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                         <div className="space-y-2">
+                           <p className="text-sm font-medium">Preview</p>
+                           {banner.desktop_image_url && (
+                             <div className="w-full h-16 bg-muted rounded-lg overflow-hidden">
+                               <img
+                                 src={banner.desktop_image_url}
+                                 alt={banner.name}
+                                 className="w-full h-full object-cover"
+                               />
+                             </div>
+                           )}
+                         </div>
                       </div>
                     </CardContent>
                   </Card>

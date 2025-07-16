@@ -73,10 +73,18 @@ export const HeroSection = () => {
                 playsInline
               />
             ) : (
-              <div 
-                className="h-full w-full bg-cover bg-center bg-no-repeat relative"
-                style={{ backgroundImage: `url(${slide.image_url})` }}
-              />
+              <>
+                {/* Desktop Image */}
+                <div 
+                  className="h-full w-full bg-cover bg-center bg-no-repeat relative hidden md:block"
+                  style={{ backgroundImage: `url(${slide.desktop_image_url})` }}
+                />
+                {/* Mobile Image */}
+                <div 
+                  className="h-full w-full bg-cover bg-center bg-no-repeat relative block md:hidden"
+                  style={{ backgroundImage: `url(${slide.mobile_image_url || slide.desktop_image_url})` }}
+                />
+              </>
             )}
             
             {/* Overlay */}
