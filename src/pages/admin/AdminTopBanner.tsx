@@ -68,15 +68,20 @@ export const AdminTopBanner = () => {
         .from('settings')
         .upsert({
           key: 'top_banner',
-          value: settings as unknown as any
+          value: JSON.parse(JSON.stringify(settings)),
+          description: 'Configurações da tarja superior'
         });
 
       if (error) throw error;
 
       toast.success('Configurações salvas com sucesso!');
+      // Clear localStorage to allow banner to show again if enabled
+      if (settings.enabled) {
+        localStorage.removeItem('top_banner_dismissed');
+      }
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast.error('Erro ao salvar configurações');
+      toast.error(`Erro ao salvar configurações: ${error.message}`);
     } finally {
       setSaving(false);
     }

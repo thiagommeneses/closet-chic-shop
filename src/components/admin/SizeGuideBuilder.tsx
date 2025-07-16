@@ -232,12 +232,14 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
     { size: 'GG', measurements: { bust: '96-100cm', waist: '76-80cm', hip: '102-106cm', length: '106cm' } }
   ];
 
-  const loadPresetSizes = () => {
+  const loadPresetSizes = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setSizes(presetSizes);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="table" className="flex items-center gap-2">
@@ -297,10 +299,10 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
 
               {/* Quick Actions */}
               <div className="flex gap-2">
-                <Button variant="outline" onClick={loadPresetSizes}>
+                <Button type="button" variant="outline" onClick={loadPresetSizes}>
                   Carregar Tamanhos Padrão
                 </Button>
-                <Button variant="outline" onClick={addSize}>
+                <Button type="button" variant="outline" onClick={addSize}>
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Tamanho
                 </Button>

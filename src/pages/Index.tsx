@@ -130,7 +130,6 @@ const Index = () => {
       <Header />
       <HeroSection />
       <DualBannerSection />
-      <FullBannerSection />
       
       {/* NEWS Section - Grid 4x2 */}
       <section className="py-12 px-4">
@@ -170,21 +169,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Large promotional banner */}
-      <section className="py-8 px-4">
-        <div className="container mx-auto">
-          <div className="bg-gradient-hero rounded-lg p-12 text-center text-white min-h-[400px] flex items-center justify-center">
-            <div>
-              <h2 className="font-serif text-3xl md:text-5xl font-bold mb-4">
-                CLOSET COLLECTION
-              </h2>
-              <p className="text-lg md:text-xl opacity-90">
-                Elegância e sofisticação em cada detalhe
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Full Banner Section */}
+      <FullBannerSection />
 
       {/* BEST SELLERS Section */}
       <section className="py-12 px-4">
