@@ -32,58 +32,21 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
   const [customMeasurements, setCustomMeasurements] = useState<string[]>(['bust', 'waist', 'hip', 'length']);
   const [instructions, setInstructions] = useState('');
   const [productImage, setProductImage] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [previewContent, setPreviewContent] = useState('');
 
-  useEffect(() => {
-    if (initialContent) {
-      parseInitialContent(initialContent);
-    }
-  }, [initialContent]);
-
-  useEffect(() => {
-    generateContent();
-  }, [sizes, instructions, productImage]);
-
-  const parseInitialContent = (content: string) => {
-    try {
-      // Try to parse HTML content and extract structured data
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, 'text/html');
-      
-      // Extract size table if exists
-      const table = doc.querySelector('table');
-      if (table) {
-        const rows = table.querySelectorAll('tr');
-        const headers = Array.from(rows[0]?.querySelectorAll('th') || []).map(th => th.textContent?.trim() || '');
-        
-        const parsedSizes: SizeEntry[] = [];
-        for (let i = 1; i < rows.length; i++) {
-          const cells = Array.from(rows[i].querySelectorAll('td')).map(td => td.textContent?.trim() || '');
-          if (cells.length > 0) {
-            const size = cells[0];
-            const measurements: any = {};
-            
-            for (let j = 1; j < cells.length; j++) {
-              const header = headers[j]?.toLowerCase();
-              if (header) {
-                measurements[header] = cells[j];
-              }
-            }
-            
-            parsedSizes.push({ size, measurements });
-          }
-        }
-        
-        setSizes(parsedSizes);
-      }
-      
-      // Extract instructions
-      const instructionsDiv = doc.querySelector('.instructions');
-      if (instructionsDiv) {
-        setInstructions(instructionsDiv.textContent || '');
-      }
-    } catch (error) {
-      console.error('Error parsing content:', error);
-    }
+  const getMeasurementLabel = (measurement: string) => {
+    const labels: { [key: string]: string } = {
+      bust: 'Busto',
+      waist: 'Cintura',
+      hip: 'Quadril',
+      length: 'Comp. Lateral',
+      shoulder: 'Ombro',
+      inseam: 'Entreperna',
+      chest: 'Peito',
+      sleeve: 'Manga'
+    };
+    return labels[measurement] || measurement;
   };
 
   const generateContent = (): string => {
@@ -143,23 +106,75 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
     }
 
     html += '</div>';
+    setPreviewContent(html);
     onChange(html);
     return html;
   };
 
-  const getMeasurementLabel = (measurement: string) => {
-    const labels: { [key: string]: string } = {
-      bust: 'Busto',
-      waist: 'Cintura',
-      hip: 'Quadril',
-      length: 'Comp. Lateral',
-      shoulder: 'Ombro',
-      inseam: 'Entreperna',
-      chest: 'Peito',
-      sleeve: 'Manga'
-    };
-    return labels[measurement] || measurement;
+  const parseInitialContent = (content: string) => {
+    try {
+      console.log('SizeGuideBuilder: parsing initial content', content);
+      // Try to parse HTML content and extract structured data
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      
+      // Extract size table if exists
+      const table = doc.querySelector('table');
+      if (table) {
+        const rows = table.querySelectorAll('tr');
+        const headers = Array.from(rows[0]?.querySelectorAll('th') || []).map(th => th.textContent?.trim() || '');
+        
+        const parsedSizes: SizeEntry[] = [];
+        for (let i = 1; i < rows.length; i++) {
+          const cells = Array.from(rows[i].querySelectorAll('td')).map(td => td.textContent?.trim() || '');
+          if (cells.length > 0) {
+            const size = cells[0];
+            const measurements: any = {};
+            
+            for (let j = 1; j < cells.length; j++) {
+              const header = headers[j]?.toLowerCase();
+              if (header) {
+                measurements[header] = cells[j];
+              }
+            }
+            
+            parsedSizes.push({ size, measurements });
+          }
+        }
+        
+        setSizes(parsedSizes);
+      }
+      
+      // Extract instructions
+      const instructionsDiv = doc.querySelector('.instructions');
+      if (instructionsDiv) {
+        setInstructions(instructionsDiv.textContent || '');
+      }
+    } catch (error) {
+      console.error('Error parsing content:', error);
+    }
   };
+
+  // Initialize component
+  useEffect(() => {
+    if (initialContent && !isInitialized) {
+      console.log('SizeGuideBuilder: initializing with content');
+      parseInitialContent(initialContent);
+      setIsInitialized(true);
+    } else if (!initialContent && !isInitialized) {
+      console.log('SizeGuideBuilder: initializing empty');
+      generateContent();
+      setIsInitialized(true);
+    }
+  }, [initialContent, isInitialized]);
+
+  // Update content when data changes
+  useEffect(() => {
+    if (isInitialized) {
+      console.log('SizeGuideBuilder: updating content');
+      generateContent();
+    }
+  }, [sizes, instructions, productImage, isInitialized]);
 
   const addSize = () => {
     const newSize: SizeEntry = {
@@ -364,7 +379,7 @@ export const SizeGuideBuilder: React.FC<SizeGuideBuilderProps> = ({ initialConte
             <CardContent>
               <div 
                 className="border rounded-lg p-4 bg-background"
-                dangerouslySetInnerHTML={{ __html: generateContent() }}
+                dangerouslySetInnerHTML={{ __html: previewContent }}
               />
             </CardContent>
           </Card>
