@@ -158,6 +158,50 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_items: {
+        Row: {
+          active: boolean
+          category_id: string | null
+          created_at: string
+          id: string
+          is_category: boolean
+          link: string | null
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_category?: boolean
+          link?: string | null
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_category?: boolean
+          link?: string | null
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string

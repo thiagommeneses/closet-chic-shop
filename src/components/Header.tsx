@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import { useMenuItems } from '@/hooks/useMenuItems';
 import logo from '/lovable-uploads/7c7debe8-e0fb-468b-8dba-36ce679a281a.png';
 
 export const Header = () => {
@@ -11,19 +12,7 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { totalItems, toggleCart } = useCart();
   const { favorites, openFavorites } = useFavorites();
-
-  const navigationItems = [
-    'Toda Loja',
-    'Lançamentos',
-    'Vestidos',
-    'Blusas',
-    'Saias & Shorts',
-    'Casual',
-    'Cropped',
-    'Body',
-    'Jeans',
-    'Saia'
-  ];
+  const { menuItems, loading: menuLoading } = useMenuItems();
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -117,13 +106,18 @@ export const Header = () => {
       <nav className={`border-t border-border ${isMenuOpen ? 'block' : 'hidden'} md:block`}>
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:justify-center py-2">
-            {navigationItems.map((item, index) => (
+            {!menuLoading && menuItems.map((item) => (
               <Button
-                key={index}
+                key={item.id}
                 variant="ghost"
                 className="justify-start md:justify-center text-sm py-3 md:py-2 hover:text-primary transition-colors"
+                onClick={() => {
+                  if (item.link) {
+                    window.location.href = item.link;
+                  }
+                }}
               >
-                {item}
+                {item.name}
               </Button>
             ))}
           </div>

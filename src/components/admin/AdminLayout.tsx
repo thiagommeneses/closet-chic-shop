@@ -12,7 +12,8 @@ import {
   FileText,
   Image,
   Users,
-  MessageSquare
+  MessageSquare,
+  Menu
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -70,6 +71,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       icon: Users,
       label: 'Clientes',
       path: '/admin/customers'
+    },
+    {
+      icon: Menu,
+      label: 'Menu do Site',
+      path: '/admin/menu'
     },
     {
       icon: Settings,
