@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Trash2, Ruler, Package, Heart, FileText, CheckCircle2 } from 'lucide-react';
 
 interface Category {
   id: string;
@@ -309,6 +309,50 @@ export const ProductForm = () => {
       }
     });
   };
+
+  // Utility functions for templates
+  const getTypeLabel = (type: string) => {
+    const types: { [key: string]: string } = {
+      size_guide: 'Guia de Medidas',
+      composition: 'Composição',
+      care_instructions: 'Cuidados com a Peça'
+    };
+    return types[type] || type;
+  };
+
+  const getTypeIcon = (type: string) => {
+    const icons: { [key: string]: any } = {
+      size_guide: Ruler,
+      composition: Package,
+      care_instructions: Heart
+    };
+    return icons[type] || FileText;
+  };
+
+  const getTypeDescription = (type: string) => {
+    const descriptions: { [key: string]: string } = {
+      size_guide: 'Informações sobre tamanhos e medidas',
+      composition: 'Materiais e características do produto',
+      care_instructions: 'Instruções de cuidados e conservação'
+    };
+    return descriptions[type] || '';
+  };
+
+  // Group templates by type
+  const templatesByType = templates.reduce((acc, template) => {
+    if (!acc[template.type]) {
+      acc[template.type] = [];
+    }
+    acc[template.type].push(template);
+    return acc;
+  }, {} as { [key: string]: ProductDetailsTemplate[] });
+
+  const selectedTemplatesByType = Object.keys(templatesByType).reduce((acc, type) => {
+    acc[type] = templatesByType[type].filter(template =>
+      productDetails.some(detail => detail.template_id === template.id)
+    );
+    return acc;
+  }, {} as { [key: string]: ProductDetailsTemplate[] });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -763,46 +807,154 @@ export const ProductForm = () => {
             </TabsContent>
 
             <TabsContent value="details" className="space-y-6">
-              <Card>
+              {/* Resumo de Seleção */}
+              <Card className="border-2 border-dashed border-primary/20 bg-primary/5">
                 <CardHeader>
-                  <CardTitle>Detalhes do Produto</CardTitle>
-                  <CardDescription>
-                    Selecione os detalhes que se aplicam a este produto
-                  </CardDescription>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    <span>Resumo dos Detalhes Selecionados</span>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {templates.map((template) => {
-                      const isSelected = productDetails.some(detail => detail.template_id === template.id);
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {Object.entries(selectedTemplatesByType).map(([type, selectedTemplates]) => {
+                      const Icon = getTypeIcon(type);
                       return (
-                        <div
-                          key={template.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            isSelected ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
-                          }`}
-                          onClick={() => toggleDetailTemplate(template.id)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-medium">{template.name}</h3>
-                              <p className="text-sm text-muted-foreground">{template.type}</p>
-                            </div>
-                            {isSelected && (
-                              <Badge variant="secondary">Selecionado</Badge>
-                            )}
+                        <div key={type} className="flex items-center space-x-3 p-3 bg-background rounded-lg border">
+                          <div className="p-2 bg-primary/10 rounded-md">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{getTypeLabel(type)}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {selectedTemplates.length} template{selectedTemplates.length !== 1 ? 's' : ''} selecionado{selectedTemplates.length !== 1 ? 's' : ''}
+                            </p>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-
-                  {templates.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Nenhum template de detalhes disponível. Configure templates na seção de configurações.
+                  
+                  {productDetails.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <p>Nenhum template selecionado</p>
+                      <p className="text-sm">Selecione os templates que se aplicam ao produto</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
+
+              {/* Seleção de Templates por Tipo */}
+              <div className="space-y-6">
+                {Object.entries(templatesByType).map(([type, typeTemplates]) => {
+                  const Icon = getTypeIcon(type);
+                  const selectedInType = selectedTemplatesByType[type] || [];
+                  
+                  return (
+                    <Card key={type} className="border-2">
+                      <CardHeader>
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{getTypeLabel(type)}</CardTitle>
+                            <CardDescription>
+                              {getTypeDescription(type)} • {selectedInType.length} de {typeTemplates.length} selecionado{selectedInType.length !== 1 ? 's' : ''}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {typeTemplates.map((template) => {
+                            const isSelected = productDetails.some(detail => detail.template_id === template.id);
+                            return (
+                              <div
+                                key={template.id}
+                                className={`group p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                                  isSelected 
+                                    ? 'border-primary bg-primary/10 shadow-sm' 
+                                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                                }`}
+                                onClick={() => toggleDetailTemplate(template.id)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className={`p-2 rounded-md transition-colors ${
+                                      isSelected 
+                                        ? 'bg-primary/20' 
+                                        : 'bg-muted group-hover:bg-primary/10'
+                                    }`}>
+                                      <Icon className={`h-4 w-4 ${
+                                        isSelected 
+                                          ? 'text-primary' 
+                                          : 'text-muted-foreground group-hover:text-primary'
+                                      }`} />
+                                    </div>
+                                    <div>
+                                      <h3 className="font-medium">{template.name}</h3>
+                                      <p className="text-sm text-muted-foreground">
+                                        {getTypeLabel(template.type)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    {isSelected && (
+                                      <Badge variant="default" className="text-xs">
+                                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                                        Selecionado
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Preview do conteúdo */}
+                                <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {typeof template.content === 'string' 
+                                      ? template.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...'
+                                      : template.content?.text?.substring(0, 100) + '...' || 'Conteúdo disponível'
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {typeTemplates.length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <div className="p-4 bg-muted/50 rounded-full w-fit mx-auto mb-4">
+                              <Icon className="h-8 w-8 opacity-50" />
+                            </div>
+                            <p>Nenhum template de {getTypeLabel(type).toLowerCase()} disponível</p>
+                            <p className="text-sm">Configure templates na seção de configurações</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {templates.length === 0 && (
+                <Card className="border-dashed border-2">
+                  <CardContent className="py-12">
+                    <div className="text-center text-muted-foreground">
+                      <div className="p-4 bg-muted/50 rounded-full w-fit mx-auto mb-4">
+                        <FileText className="h-12 w-12 opacity-50" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">Nenhum template disponível</h3>
+                      <p className="text-sm mb-2">Configure templates de detalhes na seção de configurações</p>
+                      <p className="text-xs text-muted-foreground/80">
+                        Crie templates para Guia de Medidas, Composição e Cuidados com a Peça
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="images" className="space-y-6">
