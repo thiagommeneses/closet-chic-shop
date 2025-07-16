@@ -329,108 +329,192 @@ Dicas importantes:
           </Dialog>
         </div>
 
-        <Tabs defaultValue="size_guide" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="size_guide" className="flex items-center space-x-2">
-              <Ruler className="h-4 w-4" />
-              <span>Guia de Medidas</span>
-            </TabsTrigger>
-            <TabsTrigger value="composition" className="flex items-center space-x-2">
-              <Package className="h-4 w-4" />
-              <span>Composição</span>
-            </TabsTrigger>
-            <TabsTrigger value="care_instructions" className="flex items-center space-x-2">
-              <Heart className="h-4 w-4" />
-              <span>Cuidados</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Seção de Visão Geral */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Visão Geral dos Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {Object.entries(templatesByType).map(([type, typeTemplates]) => {
+              const Icon = getTypeIcon(type);
+              const activeCount = typeTemplates.filter(t => t.active).length;
+              const totalCount = typeTemplates.length;
+              
+              return (
+                <Card key={type} className="hover:shadow-lg transition-shadow border-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{getTypeLabel(type)}</CardTitle>
+                          <CardDescription className="text-sm">
+                            {activeCount} ativo{activeCount !== 1 ? 's' : ''} de {totalCount} template{totalCount !== 1 ? 's' : ''}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant={activeCount > 0 ? "default" : "secondary"} className="text-xs">
+                        {activeCount > 0 ? 'Configurado' : 'Não configurado'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          setFormData({
+                            name: '',
+                            type: type,
+                            content: getExampleContent(type),
+                            active: true
+                          });
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Novo
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
 
-          {Object.entries(templatesByType).map(([type, typeTemplates]) => (
-            <TabsContent key={type} value={type} className="space-y-4">
-              <div className="grid gap-4">
-                {typeTemplates.map((template) => {
-                  const Icon = getTypeIcon(template.type);
-                  return (
-                    <Card key={template.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Icon className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                              <CardTitle className="text-lg">{template.name}</CardTitle>
-                              <CardDescription>
-                                {getTypeLabel(template.type)} • {template.active ? 'Ativo' : 'Inativo'}
-                              </CardDescription>
+        {/* Seção de Templates Detalhados */}
+        <div className="border-t pt-8">
+          <Tabs defaultValue="size_guide" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Gerenciar Templates</h2>
+              <TabsList className="grid w-full max-w-md grid-cols-3">
+                <TabsTrigger value="size_guide" className="flex items-center space-x-2 text-xs">
+                  <Ruler className="h-3 w-3" />
+                  <span className="hidden sm:inline">Medidas</span>
+                </TabsTrigger>
+                <TabsTrigger value="composition" className="flex items-center space-x-2 text-xs">
+                  <Package className="h-3 w-3" />
+                  <span className="hidden sm:inline">Composição</span>
+                </TabsTrigger>
+                <TabsTrigger value="care_instructions" className="flex items-center space-x-2 text-xs">
+                  <Heart className="h-3 w-3" />
+                  <span className="hidden sm:inline">Cuidados</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {Object.entries(templatesByType).map(([type, typeTemplates]) => (
+              <TabsContent key={type} value={type} className="space-y-4">
+                <div className="bg-muted/30 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3 mb-2">
+                    {React.createElement(getTypeIcon(type), { className: "h-5 w-5 text-primary" })}
+                    <h3 className="font-semibold text-lg">{getTypeLabel(type)}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {type === 'size_guide' && 'Configure guias de medidas para diferentes tipos de produtos (vestidos, camisas, calças, etc.)'}
+                    {type === 'composition' && 'Defina informações sobre tecidos, materiais e características dos produtos'}
+                    {type === 'care_instructions' && 'Crie instruções de cuidados e conservação para diferentes tipos de peças'}
+                  </p>
+                </div>
+
+                <div className="grid gap-4">
+                  {typeTemplates.map((template) => {
+                    const Icon = getTypeIcon(template.type);
+                    return (
+                      <Card key={template.id} className="hover:shadow-md transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Icon className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <CardTitle className="text-lg">{template.name}</CardTitle>
+                                <CardDescription className="flex items-center space-x-2">
+                                  <span>{getTypeLabel(template.type)}</span>
+                                  <span>•</span>
+                                  <Badge variant={template.active ? "default" : "secondary"} className="text-xs">
+                                    {template.active ? 'Ativo' : 'Inativo'}
+                                  </Badge>
+                                </CardDescription>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(template)}
+                                className="hover:bg-primary/10"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(template)}
+                                className="hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={template.active ? "default" : "secondary"}>
-                              {template.active ? 'Ativo' : 'Inativo'}
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(template)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(template)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-sm">
+                            <div className="p-4 bg-muted/50 rounded-lg prose prose-sm max-w-none border">
+                              <div 
+                                dangerouslySetInnerHTML={{
+                                  __html: typeof template.content === 'string' 
+                                    ? template.content 
+                                    : template.content?.html || template.content?.text || JSON.stringify(template.content, null, 2)
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm">
-                          <div className="p-4 bg-muted rounded-lg prose prose-sm max-w-none">
-                            <div 
-                              dangerouslySetInnerHTML={{
-                                __html: typeof template.content === 'string' 
-                                  ? template.content 
-                                  : template.content?.html || template.content?.text || JSON.stringify(template.content, null, 2)
-                              }}
-                            />
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+
+                  {typeTemplates.length === 0 && (
+                    <Card className="border-dashed border-2">
+                      <CardContent className="py-12">
+                        <div className="text-center text-muted-foreground">
+                          <div className="p-4 bg-muted/50 rounded-full w-fit mx-auto mb-4">
+                            {React.createElement(getTypeIcon(type), { className: "h-12 w-12 opacity-50" })}
                           </div>
+                          <h3 className="text-lg font-semibold mb-2">Nenhum template encontrado</h3>
+                          <p className="text-sm mb-2">Você ainda não criou nenhum template de {getTypeLabel(type).toLowerCase()}</p>
+                          <p className="text-xs text-muted-foreground/80 mb-6">
+                            Clique no botão abaixo para criar seu primeiro template
+                          </p>
+                          <Button
+                            onClick={() => {
+                              setFormData({
+                                name: '',
+                                type: type,
+                                content: getExampleContent(type),
+                                active: true
+                              });
+                              setIsDialogOpen(true);
+                            }}
+                            className="animate-pulse"
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar Primeiro Template de {getTypeLabel(type)}
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
-                  );
-                })}
-
-                {typeTemplates.length === 0 && (
-                  <Card>
-                    <CardContent className="py-8">
-                      <div className="text-center text-muted-foreground">
-                        {React.createElement(getTypeIcon(type), { className: "h-12 w-12 mx-auto mb-4 opacity-50" })}
-                        <p>Nenhum template de {getTypeLabel(type).toLowerCase()} encontrado</p>
-                        <p className="text-sm mb-4">Clique em "Novo Template" para criar o primeiro template</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setFormData({
-                              name: '',
-                              type: type,
-                              content: getExampleContent(type),
-                              active: true
-                            });
-                            setIsDialogOpen(true);
-                          }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Criar Template de {getTypeLabel(type)}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+                  )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
       </div>
     </AdminLayout>
   );
