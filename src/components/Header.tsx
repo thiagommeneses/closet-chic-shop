@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import logo from '@/assets/closet-collection-logo.png';
+import logo from '/lovable-uploads/7c7debe8-e0fb-468b-8dba-36ce679a281a.png';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
