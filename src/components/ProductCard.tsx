@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface ProductCardProps {
   id: number | string;
@@ -30,13 +31,15 @@ export const ProductCard = ({
   className = "",
   slug
 }: ProductCardProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const { addItem, openCart } = useCart();
   const navigate = useNavigate();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  
+  const imageUrl = Array.isArray(image) ? image[0] : image;
+  const isWishlisted = isFavorite(id);
 
   const handleAddToCart = () => {
-    const imageUrl = Array.isArray(image) ? image[0] : image;
     addItem({
       id: typeof id === 'string' ? parseInt(id) : id,
       name,
@@ -44,6 +47,16 @@ export const ProductCard = ({
       image: imageUrl
     });
     openCart();
+  };
+
+  const handleToggleFavorite = () => {
+    toggleFavorite({
+      id,
+      name,
+      price,
+      image: imageUrl,
+      slug
+    });
   };
 
   const formatPrice = (value: number) => {
@@ -80,7 +93,7 @@ export const ProductCard = ({
         className={`absolute top-3 right-3 z-10 bg-white/80 hover:bg-white transition-all duration-300 ${
           isWishlisted ? 'text-primary' : 'text-muted-foreground hover:text-primary'
         }`}
-        onClick={() => setIsWishlisted(!isWishlisted)}
+        onClick={handleToggleFavorite}
       >
         <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
       </Button>

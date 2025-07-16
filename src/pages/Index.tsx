@@ -1,6 +1,8 @@
 import { Header } from '@/components/Header';
+import { TopBanner } from '@/components/TopBanner';
 import { HeroSection } from '@/components/HeroSection';
 import { DualBannerSection } from '@/components/BannerSection';
+import { FullBannerSection } from '@/components/FullBannerSection';
 import { ProductGrid } from '@/components/ProductGrid';
 import { ProductCard } from '@/components/ProductCard';
 import { Footer } from '@/components/Footer';
@@ -124,9 +126,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <TopBanner />
       <Header />
       <HeroSection />
       <DualBannerSection />
+      <FullBannerSection />
       
       {/* NEWS Section - Grid 4x2 */}
       <section className="py-12 px-4">

@@ -103,14 +103,14 @@ export const HeroSection = () => {
                     {slide.subtitle}
                   </p>
                 )}
-                {slide.button_text && (
+                {slide.button_text && slide.button_link && (
                   <Button 
                     variant="elegant" 
                     size="lg"
                     className="mt-6 font-medium tracking-wide"
                     asChild
                   >
-                    <Link to={slide.button_link || '/'}>
+                    <Link to={slide.button_link}>
                       {slide.button_text}
                     </Link>
                   </Button>

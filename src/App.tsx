@@ -18,6 +18,8 @@ import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AdminProductTemplates } from "./pages/admin/AdminProductTemplates";
 import { AdminBanners } from "./pages/admin/AdminBanners";
+import { AdminTopBanner } from "./pages/admin/AdminTopBanner";
+import { AdminCustomers } from "./pages/admin/AdminCustomers";
 
 
 const queryClient = new QueryClient();
@@ -43,7 +45,9 @@ const App = () => (
               <Route path="/admin/products/:id/edit" element={<ProductForm />} />
               <Route path="/admin/product-templates" element={<AdminProductTemplates />} />
               <Route path="/admin/banners" element={<AdminBanners />} />
+              <Route path="/admin/top-banner" element={<AdminTopBanner />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/customers" element={<AdminCustomers />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

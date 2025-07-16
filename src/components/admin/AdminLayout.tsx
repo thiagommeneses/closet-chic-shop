@@ -10,7 +10,9 @@ import {
   LogOut,
   Store,
   FileText,
-  Image
+  Image,
+  Users,
+  MessageSquare
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -55,9 +57,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       path: '/admin/banners'
     },
     {
+      icon: MessageSquare,
+      label: 'Tarja Superior',
+      path: '/admin/top-banner'
+    },
+    {
       icon: ShoppingCart,
       label: 'Pedidos',
       path: '/admin/orders'
+    },
+    {
+      icon: Users,
+      label: 'Clientes',
+      path: '/admin/customers'
     },
     {
       icon: Settings,
