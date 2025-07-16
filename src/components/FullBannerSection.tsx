@@ -39,12 +39,36 @@ export const FullBannerSection = () => {
               <>
                 {/* Desktop Image */}
                 <div 
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block"
+                  className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block ${
+                    banner.image_fit === 'contain' ? 'bg-contain' : 
+                    banner.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
+                  } ${
+                    banner.image_position === 'top' ? 'bg-top' :
+                    banner.image_position === 'bottom' ? 'bg-bottom' :
+                    banner.image_position === 'left' ? 'bg-left' :
+                    banner.image_position === 'right' ? 'bg-right' :
+                    banner.image_position === 'top-left' ? 'bg-left-top' :
+                    banner.image_position === 'top-right' ? 'bg-right-top' :
+                    banner.image_position === 'bottom-left' ? 'bg-left-bottom' :
+                    banner.image_position === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+                  }`}
                   style={{ backgroundImage: `url(${banner.desktop_image_url})` }}
                 />
                 {/* Mobile Image */}
                 <div 
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden"
+                  className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden ${
+                    banner.image_fit === 'contain' ? 'bg-contain' : 
+                    banner.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
+                  } ${
+                    banner.image_position === 'top' ? 'bg-top' :
+                    banner.image_position === 'bottom' ? 'bg-bottom' :
+                    banner.image_position === 'left' ? 'bg-left' :
+                    banner.image_position === 'right' ? 'bg-right' :
+                    banner.image_position === 'top-left' ? 'bg-left-top' :
+                    banner.image_position === 'top-right' ? 'bg-right-top' :
+                    banner.image_position === 'bottom-left' ? 'bg-left-bottom' :
+                    banner.image_position === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+                  }`}
                   style={{ backgroundImage: `url(${banner.mobile_image_url || banner.desktop_image_url})` }}
                 />
               </>

@@ -76,12 +76,36 @@ export const HeroSection = () => {
               <>
                 {/* Desktop Image */}
                 <div 
-                  className="h-full w-full bg-cover bg-center bg-no-repeat relative hidden md:block"
+                  className={`h-full w-full bg-no-repeat relative hidden md:block ${
+                    slide.image_fit === 'contain' ? 'bg-contain' : 
+                    slide.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
+                  } ${
+                    slide.image_position === 'top' ? 'bg-top' :
+                    slide.image_position === 'bottom' ? 'bg-bottom' :
+                    slide.image_position === 'left' ? 'bg-left' :
+                    slide.image_position === 'right' ? 'bg-right' :
+                    slide.image_position === 'top-left' ? 'bg-left-top' :
+                    slide.image_position === 'top-right' ? 'bg-right-top' :
+                    slide.image_position === 'bottom-left' ? 'bg-left-bottom' :
+                    slide.image_position === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+                  }`}
                   style={{ backgroundImage: `url(${slide.desktop_image_url})` }}
                 />
                 {/* Mobile Image */}
                 <div 
-                  className="h-full w-full bg-cover bg-center bg-no-repeat relative block md:hidden"
+                  className={`h-full w-full bg-no-repeat relative block md:hidden ${
+                    slide.image_fit === 'contain' ? 'bg-contain' : 
+                    slide.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
+                  } ${
+                    slide.image_position === 'top' ? 'bg-top' :
+                    slide.image_position === 'bottom' ? 'bg-bottom' :
+                    slide.image_position === 'left' ? 'bg-left' :
+                    slide.image_position === 'right' ? 'bg-right' :
+                    slide.image_position === 'top-left' ? 'bg-left-top' :
+                    slide.image_position === 'top-right' ? 'bg-right-top' :
+                    slide.image_position === 'bottom-left' ? 'bg-left-bottom' :
+                    slide.image_position === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+                  }`}
                   style={{ backgroundImage: `url(${slide.mobile_image_url || slide.desktop_image_url})` }}
                 />
               </>

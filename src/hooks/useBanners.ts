@@ -14,6 +14,8 @@ export interface Banner {
   video_url?: string;
   position: number;
   active: boolean;
+  image_position?: string;
+  image_fit?: string;
   created_at: string;
   updated_at: string;
 }

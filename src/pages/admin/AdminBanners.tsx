@@ -27,6 +27,8 @@ interface Banner {
   video_url?: string;
   position: number;
   active: boolean;
+  image_position?: string;
+  image_fit?: string;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +45,8 @@ interface BannerFormData {
   video_url: string;
   position: number;
   active: boolean;
+  image_position: string;
+  image_fit: string;
 }
 
 export const AdminBanners = () => {
@@ -64,7 +68,9 @@ export const AdminBanners = () => {
     mobile_image_url: '',
     video_url: '',
     position: 0,
-    active: true
+    active: true,
+    image_position: 'center',
+    image_fit: 'cover'
   });
 
   useEffect(() => {
@@ -102,7 +108,9 @@ export const AdminBanners = () => {
       mobile_image_url: '',
       video_url: '',
       position: 0,
-      active: true
+      active: true,
+      image_position: 'center',
+      image_fit: 'cover'
     });
     setEditingBanner(null);
   };
@@ -164,7 +172,9 @@ export const AdminBanners = () => {
       mobile_image_url: banner.mobile_image_url || '',
       video_url: banner.video_url || '',
       position: banner.position,
-      active: banner.active
+      active: banner.active,
+      image_position: banner.image_position || 'center',
+      image_fit: banner.image_fit || 'cover'
     });
     setIsDialogOpen(true);
   };
@@ -185,7 +195,9 @@ export const AdminBanners = () => {
         mobile_image_url: formData.mobile_image_url || null,
         video_url: formData.video_url || null,
         position: formData.position,
-        active: formData.active
+        active: formData.active,
+        image_position: formData.image_position,
+        image_fit: formData.image_fit
       };
 
       if (editingBanner) {
@@ -543,6 +555,56 @@ export const AdminBanners = () => {
                   </div>
                 </div>
 
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="image_position">Posição da Imagem</Label>
+                    <Select value={formData.image_position} onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, image_position: value }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Posição da imagem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="center">Centro</SelectItem>
+                        <SelectItem value="top">Topo</SelectItem>
+                        <SelectItem value="bottom">Fundo</SelectItem>
+                        <SelectItem value="left">Esquerda</SelectItem>
+                        <SelectItem value="right">Direita</SelectItem>
+                        <SelectItem value="top-left">Topo Esquerda</SelectItem>
+                        <SelectItem value="top-right">Topo Direita</SelectItem>
+                        <SelectItem value="bottom-left">Fundo Esquerda</SelectItem>
+                        <SelectItem value="bottom-right">Fundo Direita</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="image_fit">Ajuste da Imagem</Label>
+                    <Select value={formData.image_fit} onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, image_fit: value }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Ajuste da imagem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cover">Cobrir (pode cortar)</SelectItem>
+                        <SelectItem value="contain">Conter (imagem completa)</SelectItem>
+                        <SelectItem value="fill">Preencher (pode distorcer)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm font-medium mb-2">ℹ️ Dicas de posicionamento</p>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p><strong>Posição:</strong> Define qual parte da imagem será mostrada quando ela for maior que o container</p>
+                    <p><strong>Cobrir:</strong> Preenche todo o espaço, pode cortar partes da imagem</p>
+                    <p><strong>Conter:</strong> Mostra a imagem completa, pode deixar espaços em branco</p>
+                    <p><strong>Preencher:</strong> Força a imagem a ocupar todo o espaço, pode distorcer</p>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

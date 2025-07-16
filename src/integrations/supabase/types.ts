@@ -46,6 +46,8 @@ export type Database = {
           created_at: string
           desktop_image_url: string | null
           id: string
+          image_fit: string | null
+          image_position: string | null
           mobile_image_url: string | null
           name: string
           position: number | null
@@ -62,6 +64,8 @@ export type Database = {
           created_at?: string
           desktop_image_url?: string | null
           id?: string
+          image_fit?: string | null
+          image_position?: string | null
           mobile_image_url?: string | null
           name: string
           position?: number | null
@@ -78,6 +82,8 @@ export type Database = {
           created_at?: string
           desktop_image_url?: string | null
           id?: string
+          image_fit?: string | null
+          image_position?: string | null
           mobile_image_url?: string | null
           name?: string
           position?: number | null

@@ -9,6 +9,8 @@ interface BannerProps {
   ctaText?: string;
   ctaUrl?: string;
   size?: 'small' | 'medium' | 'large';
+  imagePosition?: string;
+  imageFit?: string;
 }
 
 export const BannerSection = ({ 
@@ -17,7 +19,9 @@ export const BannerSection = ({
   image, 
   ctaText, 
   ctaUrl, 
-  size = 'medium' 
+  size = 'medium',
+  imagePosition = 'center',
+  imageFit = 'cover'
 }: BannerProps) => {
   const heightClass = {
     small: 'h-48 md:h-64',
@@ -29,7 +33,19 @@ export const BannerSection = ({
     <div className={`relative ${heightClass} overflow-hidden rounded-lg group`}>
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105"
+        className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 ${
+          imageFit === 'contain' ? 'bg-contain' : 
+          imageFit === 'fill' ? 'bg-cover' : 'bg-cover'
+        } ${
+          imagePosition === 'top' ? 'bg-top' :
+          imagePosition === 'bottom' ? 'bg-bottom' :
+          imagePosition === 'left' ? 'bg-left' :
+          imagePosition === 'right' ? 'bg-right' :
+          imagePosition === 'top-left' ? 'bg-left-top' :
+          imagePosition === 'top-right' ? 'bg-right-top' :
+          imagePosition === 'bottom-left' ? 'bg-left-bottom' :
+          imagePosition === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+        }`}
         style={{ backgroundImage: `url(${image})` }}
       />
       
@@ -105,12 +121,36 @@ export const DualBannerSection = () => {
                 <>
                   {/* Desktop Image */}
                   <div 
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block"
+                    className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 hidden md:block ${
+                      banner.image_fit === 'contain' ? 'bg-contain' : 
+                      banner.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
+                    } ${
+                      banner.image_position === 'top' ? 'bg-top' :
+                      banner.image_position === 'bottom' ? 'bg-bottom' :
+                      banner.image_position === 'left' ? 'bg-left' :
+                      banner.image_position === 'right' ? 'bg-right' :
+                      banner.image_position === 'top-left' ? 'bg-left-top' :
+                      banner.image_position === 'top-right' ? 'bg-right-top' :
+                      banner.image_position === 'bottom-left' ? 'bg-left-bottom' :
+                      banner.image_position === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+                    }`}
                     style={{ backgroundImage: `url(${banner.desktop_image_url})` }}
                   />
                   {/* Mobile Image */}
                   <div 
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden"
+                    className={`absolute inset-0 bg-no-repeat transition-transform duration-500 group-hover:scale-105 block md:hidden ${
+                      banner.image_fit === 'contain' ? 'bg-contain' : 
+                      banner.image_fit === 'fill' ? 'bg-cover' : 'bg-cover'
+                    } ${
+                      banner.image_position === 'top' ? 'bg-top' :
+                      banner.image_position === 'bottom' ? 'bg-bottom' :
+                      banner.image_position === 'left' ? 'bg-left' :
+                      banner.image_position === 'right' ? 'bg-right' :
+                      banner.image_position === 'top-left' ? 'bg-left-top' :
+                      banner.image_position === 'top-right' ? 'bg-right-top' :
+                      banner.image_position === 'bottom-left' ? 'bg-left-bottom' :
+                      banner.image_position === 'bottom-right' ? 'bg-right-bottom' : 'bg-center'
+                    }`}
                     style={{ backgroundImage: `url(${banner.mobile_image_url || banner.desktop_image_url})` }}
                   />
                 </>
