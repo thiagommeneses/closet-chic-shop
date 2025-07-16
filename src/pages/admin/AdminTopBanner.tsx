@@ -70,6 +70,8 @@ export const AdminTopBanner = () => {
           key: 'top_banner',
           value: JSON.parse(JSON.stringify(settings)),
           description: 'Configurações da tarja superior'
+        }, {
+          onConflict: 'key'
         });
 
       if (error) throw error;
