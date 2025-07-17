@@ -95,6 +95,51 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_reservations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          product_id: string
+          quantity: number
+          session_id: string
+          variation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          product_id: string
+          quantity: number
+          session_id: string
+          variation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          session_id?: string
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_reservations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_reservations_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -157,6 +202,60 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      inventory_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          current_stock: number
+          id: string
+          product_id: string
+          resolved_at: string | null
+          status: string
+          threshold_value: number | null
+          updated_at: string
+          variation_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          current_stock: number
+          id?: string
+          product_id: string
+          resolved_at?: string | null
+          status?: string
+          threshold_value?: number | null
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          current_stock?: number
+          id?: string
+          product_id?: string
+          resolved_at?: string | null
+          status?: string
+          threshold_value?: number | null
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_alerts_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_items: {
         Row: {
@@ -498,8 +597,10 @@ export type Database = {
           active: boolean | null
           created_at: string
           id: string
+          low_stock_threshold: number | null
           price_adjustment: number | null
           product_id: string
+          reorder_point: number | null
           sku: string | null
           stock_quantity: number | null
           updated_at: string
@@ -510,8 +611,10 @@ export type Database = {
           active?: boolean | null
           created_at?: string
           id?: string
+          low_stock_threshold?: number | null
           price_adjustment?: number | null
           product_id: string
+          reorder_point?: number | null
           sku?: string | null
           stock_quantity?: number | null
           updated_at?: string
@@ -522,8 +625,10 @@ export type Database = {
           active?: boolean | null
           created_at?: string
           id?: string
+          low_stock_threshold?: number | null
           price_adjustment?: number | null
           product_id?: string
+          reorder_point?: number | null
           sku?: string | null
           stock_quantity?: number | null
           updated_at?: string
@@ -543,6 +648,7 @@ export type Database = {
       products: {
         Row: {
           active: boolean | null
+          auto_reorder: boolean | null
           category_id: string | null
           created_at: string
           description: string | null
@@ -551,8 +657,10 @@ export type Database = {
           id: string
           images: string[] | null
           length_cm: number | null
+          low_stock_threshold: number | null
           name: string
           price: number
+          reorder_point: number | null
           sale_price: number | null
           sku: string | null
           slug: string
@@ -564,6 +672,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          auto_reorder?: boolean | null
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -572,8 +681,10 @@ export type Database = {
           id?: string
           images?: string[] | null
           length_cm?: number | null
+          low_stock_threshold?: number | null
           name: string
           price: number
+          reorder_point?: number | null
           sale_price?: number | null
           sku?: string | null
           slug: string
@@ -585,6 +696,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          auto_reorder?: boolean | null
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -593,8 +705,10 @@ export type Database = {
           id?: string
           images?: string[] | null
           length_cm?: number | null
+          low_stock_threshold?: number | null
           name?: string
           price?: number
+          reorder_point?: number | null
           sale_price?: number | null
           sku?: string | null
           slug?: string
@@ -641,6 +755,76 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_type: string
+          new_stock: number
+          notes: string | null
+          order_id: string | null
+          previous_stock: number
+          product_id: string
+          quantity: number
+          reason: string | null
+          reference_id: string | null
+          variation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type: string
+          new_stock: number
+          notes?: string | null
+          order_id?: string | null
+          previous_stock: number
+          product_id: string
+          quantity: number
+          reason?: string | null
+          reference_id?: string | null
+          variation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type?: string
+          new_stock?: number
+          notes?: string | null
+          order_id?: string | null
+          previous_stock?: number
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          reference_id?: string | null
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           active: boolean | null
@@ -679,6 +863,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_inventory_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_reservations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_any_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -690,6 +882,20 @@ export type Database = {
       make_user_admin: {
         Args: { user_email: string }
         Returns: undefined
+      }
+      record_stock_movement: {
+        Args: {
+          p_product_id: string
+          p_movement_type: string
+          p_quantity: number
+          p_variation_id?: string
+          p_reason?: string
+          p_order_id?: string
+          p_reference_id?: string
+          p_notes?: string
+          p_created_by?: string
+        }
+        Returns: string
       }
     }
     Enums: {
