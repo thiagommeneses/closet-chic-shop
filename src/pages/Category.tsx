@@ -331,7 +331,7 @@ const Category = () => {
                   className="hover-scale text-muted-foreground hover:text-foreground transition-colors animate-fade-in"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Limpar
+                  Limpar filtros
                 </Button>
               )}
               
