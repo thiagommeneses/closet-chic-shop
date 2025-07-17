@@ -7,7 +7,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, SlidersHorizontal, Grid3X3, LayoutList, Eye } from 'lucide-react';
+import { Search, SlidersHorizontal, Grid3X3, LayoutList, Eye, RotateCcw } from 'lucide-react';
 import { Product } from '@/hooks/useProducts';
 
 interface Category {
@@ -220,6 +220,14 @@ const Category = () => {
     setFilteredProducts(filtered);
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setPriceRange('all');
+    setSortBy('name');
+  };
+
+  const hasActiveFilters = searchTerm !== '' || priceRange !== 'all' || sortBy !== 'name';
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -315,6 +323,18 @@ const Category = () => {
             </div>
 
             <div className="flex gap-2">
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="hover-scale text-muted-foreground hover:text-foreground transition-colors animate-fade-in"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Limpar
+                </Button>
+              )}
+              
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Ordenar por" />
