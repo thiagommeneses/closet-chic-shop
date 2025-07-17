@@ -9,6 +9,7 @@ export interface MenuItem {
   active: boolean;
   is_category: boolean;
   category_id?: string;
+  tag_id?: string;
 }
 
 export const useMenuItems = () => {

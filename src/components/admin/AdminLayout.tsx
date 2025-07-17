@@ -13,7 +13,9 @@ import {
   Image,
   Users,
   MessageSquare,
-  Menu
+  Menu,
+  Folder,
+  Tag
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -76,6 +78,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       icon: Menu,
       label: 'Menu do Site',
       path: '/admin/menu'
+    },
+    {
+      icon: Folder,
+      label: 'Categorias',
+      path: '/admin/categories'
+    },
+    {
+      icon: Tag,
+      label: 'Tags',
+      path: '/admin/tags'
     },
     {
       icon: Settings,

@@ -19,6 +19,7 @@ interface MenuItem {
   active: boolean;
   is_category: boolean;
   category_id?: string;
+  tag_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -327,6 +328,9 @@ export default function AdminMenu() {
                         {item.is_category && (
                           <Badge variant="secondary">Categoria</Badge>
                         )}
+                        {item.tag_id && (
+                          <Badge variant="outline">Tag</Badge>
+                        )}
                         {!item.active && (
                           <Badge variant="outline">Inativo</Badge>
                         )}
@@ -346,7 +350,7 @@ export default function AdminMenu() {
                       onCheckedChange={(checked) => toggleActive(item.id, checked)}
                     />
                     
-                    {!item.is_category && (
+                    {!item.is_category && !item.tag_id && (
                       <>
                         <Button
                           variant="ghost"
