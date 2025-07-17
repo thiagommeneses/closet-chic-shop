@@ -109,6 +109,18 @@ export const ProductForm = () => {
     }
   }, [id]);
 
+  // Calculate total stock from variations
+  useEffect(() => {
+    const totalStock = variations.reduce((sum, variation) => {
+      return sum + (variation.stock_quantity || 0);
+    }, 0);
+    
+    setFormData(prev => ({
+      ...prev,
+      stock_quantity: totalStock.toString()
+    }));
+  }, [variations]);
+
   const loadCategories = async () => {
     try {
       const { data, error } = await supabase
@@ -771,9 +783,13 @@ export const ProductForm = () => {
                           id="stock_quantity"
                           type="number"
                           value={formData.stock_quantity}
-                          onChange={(e) => handleInputChange('stock_quantity', e.target.value)}
+                          readOnly
                           placeholder="0"
+                          className="bg-muted cursor-not-allowed"
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Calculado automaticamente pela soma das variações
+                        </p>
                       </div>
 
                       <div className="space-y-2">
