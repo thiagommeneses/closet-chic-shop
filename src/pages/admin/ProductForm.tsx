@@ -55,7 +55,7 @@ interface ProductFormData {
   price: string;
   sale_price: string;
   stock_quantity: string;
-  category_id: string;
+  category_ids: string[];
   sku: string;
   tags: string[];
   featured: boolean;
@@ -88,7 +88,7 @@ export const ProductForm = () => {
     price: '',
     sale_price: '',
     stock_quantity: '0',
-    category_id: '',
+    category_ids: [],
     sku: '',
     tags: [],
     featured: false,
@@ -183,7 +183,7 @@ export const ProductForm = () => {
         price: product.price?.toString() || '',
         sale_price: product.sale_price?.toString() || '',
         stock_quantity: product.stock_quantity?.toString() || '0',
-        category_id: product.category_id || '',
+        category_ids: [],
         sku: product.sku || '',
         tags: product.tags || [],
         featured: product.featured || false,
@@ -194,6 +194,20 @@ export const ProductForm = () => {
         width_cm: product.width_cm?.toString() || '15',
         height_cm: product.height_cm?.toString() || '10'
       });
+
+      // Load product categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('product_categories')
+        .select('category_id')
+        .eq('product_id', id);
+
+      if (categoriesError) throw categoriesError;
+      
+      // Update form data with selected categories
+      setFormData(prev => ({
+        ...prev,
+        category_ids: categoriesData?.map(c => c.category_id) || []
+      }));
 
       // Load product variations
       const { data: variationsData, error: variationsError } = await supabase
@@ -446,7 +460,6 @@ export const ProductForm = () => {
         price: parseFloat(formData.price),
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         stock_quantity: parseInt(formData.stock_quantity) || 0,
-        category_id: formData.category_id || null,
         sku: formData.sku || null,
         tags: formData.tags,
         featured: formData.featured,
@@ -552,6 +565,29 @@ export const ProductForm = () => {
         if (tagError) throw tagError;
       }
 
+      // Handle product categories
+      if (isEditing) {
+        // Delete existing product categories
+        await supabase
+          .from('product_categories')
+          .delete()
+          .eq('product_id', id);
+      }
+
+      // Insert new product categories
+      if (formData.category_ids.length > 0) {
+        const categoryData = formData.category_ids.map(categoryId => ({
+          product_id: productId,
+          category_id: categoryId
+        }));
+
+        const { error: categoryError } = await supabase
+          .from('product_categories')
+          .insert(categoryData);
+
+        if (categoryError) throw categoryError;
+      }
+
       toast({
         title: `Produto ${isEditing ? 'atualizado' : 'criado'} com sucesso!`
       });
@@ -640,19 +676,57 @@ export const ProductForm = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="category">Categoria</Label>
-                      <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label>Categorias</Label>
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {formData.category_ids.map((categoryId) => {
+                            const category = categories.find(c => c.id === categoryId);
+                            return category ? (
+                              <Badge
+                                key={categoryId}
+                                variant="secondary"
+                                className="flex items-center gap-1"
+                              >
+                                {category.name}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-auto p-0 ml-1"
+                                  onClick={() => {
+                                    const newCategories = formData.category_ids.filter(c => c !== categoryId);
+                                    handleInputChange('category_ids', newCategories);
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                        
+                        <Select
+                          value=""
+                          onValueChange={(categoryId) => {
+                            if (categoryId && !formData.category_ids.includes(categoryId)) {
+                              handleInputChange('category_ids', [...formData.category_ids, categoryId]);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories
+                              .filter(category => !formData.category_ids.includes(category.id))
+                              .map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
