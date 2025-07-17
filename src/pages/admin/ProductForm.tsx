@@ -12,11 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Upload, X, Plus, Trash2, Ruler, Package, Heart, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Trash2, Ruler, Package, Heart, FileText, CheckCircle2, Tag } from 'lucide-react';
 
 interface Category {
   id: string;
   name: string;
+}
+
+interface TagOption {
+  id: string;
+  name: string;
+  color: string;
 }
 
 interface ProductVariation {
@@ -51,7 +57,7 @@ interface ProductFormData {
   stock_quantity: string;
   category_id: string;
   sku: string;
-  tags: string;
+  tags: string[];
   featured: boolean;
   active: boolean;
   images: string[];
@@ -68,6 +74,7 @@ export const ProductForm = () => {
   const isEditing = !!id;
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<TagOption[]>([]);
   const [templates, setTemplates] = useState<ProductDetailsTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -83,7 +90,7 @@ export const ProductForm = () => {
     stock_quantity: '0',
     category_id: '',
     sku: '',
-    tags: '',
+    tags: [],
     featured: false,
     active: true,
     images: [],
@@ -95,6 +102,7 @@ export const ProductForm = () => {
 
   useEffect(() => {
     loadCategories();
+    loadTags();
     loadTemplates();
     if (isEditing) {
       loadProduct();
@@ -114,6 +122,25 @@ export const ProductForm = () => {
       toast({
         variant: "destructive",
         title: "Erro ao carregar categorias",
+        description: error.message
+      });
+    }
+  };
+
+  const loadTags = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('id, name, color')
+        .eq('active', true)
+        .order('name');
+
+      if (error) throw error;
+      setTags(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar tags",
         description: error.message
       });
     }
@@ -158,7 +185,7 @@ export const ProductForm = () => {
         stock_quantity: product.stock_quantity?.toString() || '0',
         category_id: product.category_id || '',
         sku: product.sku || '',
-        tags: product.tags?.join(', ') || '',
+        tags: product.tags || [],
         featured: product.featured || false,
         active: product.active !== false,
         images: product.images || [],
@@ -189,6 +216,20 @@ export const ProductForm = () => {
       if (detailsError) throw detailsError;
       setProductDetails(detailsData || []);
 
+      // Load product tags
+      const { data: tagsData, error: tagsError } = await supabase
+        .from('product_tags')
+        .select('tag_id')
+        .eq('product_id', id);
+
+      if (tagsError) throw tagsError;
+      
+      // Update form data with selected tags
+      setFormData(prev => ({
+        ...prev,
+        tags: tagsData?.map(t => t.tag_id) || []
+      }));
+
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -209,7 +250,7 @@ export const ProductForm = () => {
       .trim();
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -407,7 +448,7 @@ export const ProductForm = () => {
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         category_id: formData.category_id || null,
         sku: formData.sku || null,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
+        tags: formData.tags,
         featured: formData.featured,
         active: formData.active,
         images: formData.images,
@@ -486,6 +527,29 @@ export const ProductForm = () => {
           .insert(detailsData);
 
         if (detailsError) throw detailsError;
+      }
+
+      // Handle product tags
+      if (isEditing) {
+        // Delete existing product tags
+        await supabase
+          .from('product_tags')
+          .delete()
+          .eq('product_id', id);
+      }
+
+      // Insert new product tags
+      if (formData.tags.length > 0) {
+        const tagData = formData.tags.map(tagId => ({
+          product_id: productId,
+          tag_id: tagId
+        }));
+
+        const { error: tagError } = await supabase
+          .from('product_tags')
+          .insert(tagData);
+
+        if (tagError) throw tagError;
       }
 
       toast({
@@ -650,13 +714,65 @@ export const ProductForm = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-                      <Input
-                        id="tags"
-                        value={formData.tags}
-                        onChange={(e) => handleInputChange('tags', e.target.value)}
-                        placeholder="elegante, festa, premium"
-                      />
+                      <Label>Tags do Produto</Label>
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {formData.tags.map((tagId) => {
+                            const tag = tags.find(t => t.id === tagId);
+                            return tag ? (
+                              <Badge
+                                key={tagId}
+                                variant="secondary"
+                                className="flex items-center gap-1"
+                                style={{ backgroundColor: tag.color + '20', color: tag.color }}
+                              >
+                                <Tag className="h-3 w-3" />
+                                {tag.name}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-auto p-0 ml-1"
+                                  onClick={() => {
+                                    const newTags = formData.tags.filter(t => t !== tagId);
+                                    handleInputChange('tags', newTags);
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ) : null;
+                          })}
+                        </div>
+                        
+                        <Select
+                          value=""
+                          onValueChange={(tagId) => {
+                            if (tagId && !formData.tags.includes(tagId)) {
+                              handleInputChange('tags', [...formData.tags, tagId]);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma tag" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tags
+                              .filter(tag => !formData.tags.includes(tag.id))
+                              .map((tag) => (
+                                <SelectItem key={tag.id} value={tag.id}>
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className="w-3 h-3 rounded-full"
+                                      style={{ backgroundColor: tag.color }}
+                                    />
+                                    {tag.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
