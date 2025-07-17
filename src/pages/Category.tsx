@@ -96,16 +96,28 @@ const Category = () => {
     if (priceRange !== 'all') {
       switch (priceRange) {
         case 'under-50':
-          filtered = filtered.filter(product => product.price < 50);
+          filtered = filtered.filter(product => {
+            const effectivePrice = product.sale_price || product.price;
+            return effectivePrice < 50;
+          });
           break;
         case '50-100':
-          filtered = filtered.filter(product => product.price >= 50 && product.price <= 100);
+          filtered = filtered.filter(product => {
+            const effectivePrice = product.sale_price || product.price;
+            return effectivePrice >= 50 && effectivePrice <= 100;
+          });
           break;
         case '100-200':
-          filtered = filtered.filter(product => product.price >= 100 && product.price <= 200);
+          filtered = filtered.filter(product => {
+            const effectivePrice = product.sale_price || product.price;
+            return effectivePrice >= 100 && effectivePrice <= 200;
+          });
           break;
         case 'over-200':
-          filtered = filtered.filter(product => product.price > 200);
+          filtered = filtered.filter(product => {
+            const effectivePrice = product.sale_price || product.price;
+            return effectivePrice > 200;
+          });
           break;
       }
     }
@@ -116,10 +128,18 @@ const Category = () => {
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => {
+          const priceA = a.sale_price || a.price;
+          const priceB = b.sale_price || b.price;
+          return priceA - priceB;
+        });
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => {
+          const priceA = a.sale_price || a.price;
+          const priceB = b.sale_price || b.price;
+          return priceB - priceA;
+        });
         break;
       case 'newest':
         filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
