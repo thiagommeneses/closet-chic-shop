@@ -28,12 +28,19 @@ const Category = () => {
   const [sortBy, setSortBy] = useState('name');
   const [priceRange, setPriceRange] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [priceRanges, setPriceRanges] = useState<Array<{value: string, label: string, min: number, max?: number}>>([]);
 
   useEffect(() => {
     if (slug) {
       fetchCategoryAndProducts();
     }
   }, [slug]);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      calculatePriceRanges();
+    }
+  }, [products]);
 
   useEffect(() => {
     applyFilters();
@@ -81,6 +88,72 @@ const Category = () => {
     }
   };
 
+  const calculatePriceRanges = () => {
+    if (products.length === 0) {
+      setPriceRanges([]);
+      return;
+    }
+
+    // Get all effective prices (sale_price if available, otherwise price)
+    const prices = products.map(product => product.sale_price || product.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    // If all products have similar prices (less than R$ 20 difference), don't create ranges
+    if (maxPrice - minPrice < 20) {
+      setPriceRanges([]);
+      return;
+    }
+
+    // Round prices to nice numbers
+    const roundPrice = (price: number) => {
+      if (price < 50) return Math.ceil(price / 10) * 10;
+      if (price < 200) return Math.ceil(price / 25) * 25;
+      if (price < 500) return Math.ceil(price / 50) * 50;
+      return Math.ceil(price / 100) * 100;
+    };
+
+    const roundedMin = Math.floor(minPrice / 10) * 10;
+    const roundedMax = roundPrice(maxPrice);
+    
+    // Create 4-5 price ranges
+    const ranges = [];
+    const step = (roundedMax - roundedMin) / 4;
+    
+    for (let i = 0; i < 4; i++) {
+      const rangeMin = roundedMin + (step * i);
+      const rangeMax = i === 3 ? roundedMax : roundedMin + (step * (i + 1));
+      
+      // Round the range boundaries
+      const min = Math.ceil(rangeMin / 10) * 10;
+      const max = Math.floor(rangeMax / 10) * 10;
+      
+      if (i === 0) {
+        ranges.push({
+          value: `under-${max}`,
+          label: `Até R$ ${max.toFixed(0)}`,
+          min: 0,
+          max
+        });
+      } else if (i === 3) {
+        ranges.push({
+          value: `over-${min}`,
+          label: `Acima de R$ ${min.toFixed(0)}`,
+          min
+        });
+      } else {
+        ranges.push({
+          value: `${min}-${max}`,
+          label: `R$ ${min.toFixed(0)} - R$ ${max.toFixed(0)}`,
+          min,
+          max
+        });
+      }
+    }
+
+    setPriceRanges(ranges);
+  };
+
   const applyFilters = () => {
     let filtered = [...products];
 
@@ -94,31 +167,21 @@ const Category = () => {
 
     // Filtro por faixa de preço
     if (priceRange !== 'all') {
-      switch (priceRange) {
-        case 'under-50':
-          filtered = filtered.filter(product => {
-            const effectivePrice = product.sale_price || product.price;
-            return effectivePrice < 50;
-          });
-          break;
-        case '50-100':
-          filtered = filtered.filter(product => {
-            const effectivePrice = product.sale_price || product.price;
-            return effectivePrice >= 50 && effectivePrice <= 100;
-          });
-          break;
-        case '100-200':
-          filtered = filtered.filter(product => {
-            const effectivePrice = product.sale_price || product.price;
-            return effectivePrice >= 100 && effectivePrice <= 200;
-          });
-          break;
-        case 'over-200':
-          filtered = filtered.filter(product => {
-            const effectivePrice = product.sale_price || product.price;
-            return effectivePrice > 200;
-          });
-          break;
+      // Find the selected range configuration
+      const selectedRange = priceRanges.find(range => range.value === priceRange);
+      
+      if (selectedRange) {
+        filtered = filtered.filter(product => {
+          const effectivePrice = product.sale_price || product.price;
+          
+          if (selectedRange.max) {
+            // Range with min and max
+            return effectivePrice >= selectedRange.min && effectivePrice <= selectedRange.max;
+          } else {
+            // Range with only min (over X)
+            return effectivePrice >= selectedRange.min;
+          }
+        });
       }
     }
 
@@ -233,19 +296,22 @@ const Category = () => {
                 />
               </div>
               
-              <Select value={priceRange} onValueChange={setPriceRange}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Faixa de preço" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os preços</SelectItem>
-                  <SelectItem value="under-50">Até R$ 50</SelectItem>
-                  <SelectItem value="50-100">R$ 50 - R$ 100</SelectItem>
-                  <SelectItem value="100-200">R$ 100 - R$ 200</SelectItem>
-                  <SelectItem value="over-200">Acima de R$ 200</SelectItem>
-                </SelectContent>
-              </Select>
+              {priceRanges.length > 0 && (
+                <Select value={priceRange} onValueChange={setPriceRange}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Faixa de preço" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os preços</SelectItem>
+                    {priceRanges.map((range) => (
+                      <SelectItem key={range.value} value={range.value}>
+                        {range.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="flex gap-2">
