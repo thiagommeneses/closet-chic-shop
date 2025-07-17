@@ -57,11 +57,14 @@ const Category = () => {
 
       setCategory(categoryData);
 
-      // Buscar produtos da categoria
+      // Buscar produtos da categoria através da tabela product_categories
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('*')
-        .eq('category_id', categoryData.id)
+        .select(`
+          *,
+          product_categories!inner(category_id)
+        `)
+        .eq('product_categories.category_id', categoryData.id)
         .eq('active', true)
         .order('created_at', { ascending: false });
 
