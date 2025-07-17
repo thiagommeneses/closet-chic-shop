@@ -15,7 +15,8 @@ import {
   MessageSquare,
   Menu,
   Folder,
-  Tag
+  Tag,
+  Warehouse
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -48,6 +49,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       icon: Package,
       label: 'Produtos',
       path: '/admin/products'
+    },
+    {
+      icon: Warehouse,
+      label: 'Estoque',
+      path: '/admin/inventory'
     },
     {
       icon: FileText,
