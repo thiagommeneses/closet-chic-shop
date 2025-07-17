@@ -454,6 +454,44 @@ export type Database = {
           },
         ]
       }
+      product_attributes: {
+        Row: {
+          attribute_name: string
+          attribute_values: Json
+          created_at: string
+          display_order: number
+          id: string
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          attribute_name: string
+          attribute_values: Json
+          created_at?: string
+          display_order?: number
+          id?: string
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          attribute_name?: string
+          attribute_values?: Json
+          created_at?: string
+          display_order?: number
+          id?: string
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_attributes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           category_id: string
@@ -588,6 +626,59 @@ export type Database = {
             columns: ["tag_id"]
             isOneToOne: false
             referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          active: boolean
+          attributes: Json
+          created_at: string
+          id: string
+          images: string[] | null
+          low_stock_threshold: number | null
+          price_adjustment: number | null
+          product_id: string
+          reorder_point: number | null
+          sku: string | null
+          stock_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          attributes: Json
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          low_stock_threshold?: number | null
+          price_adjustment?: number | null
+          product_id: string
+          reorder_point?: number | null
+          sku?: string | null
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          attributes?: Json
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          low_stock_threshold?: number | null
+          price_adjustment?: number | null
+          product_id?: string
+          reorder_point?: number | null
+          sku?: string | null
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -870,6 +961,18 @@ export type Database = {
       cleanup_expired_reservations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_variant_sku: {
+        Args: { p_product_id: string; p_attributes: Json }
+        Returns: string
+      }
+      get_available_attribute_values: {
+        Args: { p_product_id: string; p_selected_attributes?: Json }
+        Returns: {
+          attribute_name: string
+          available_values: Json
+          has_stock: boolean
+        }[]
       }
       has_any_admin: {
         Args: Record<PropertyKey, never>
