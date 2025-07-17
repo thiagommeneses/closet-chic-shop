@@ -7,7 +7,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, Grid3X3, LayoutList, Eye } from 'lucide-react';
 import { Product } from '@/hooks/useProducts';
 
 interface Category {
@@ -27,6 +27,7 @@ const Category = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [priceRange, setPriceRange] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     if (slug) {
@@ -119,6 +120,14 @@ const Category = () => {
         break;
       case 'newest':
         filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'most-viewed':
+        // Para "mais vistos", vamos ordenar por featured primeiro, depois por data de criação
+        filtered.sort((a, b) => {
+          if (a.featured && !b.featured) return -1;
+          if (!a.featured && b.featured) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
         break;
     }
 
@@ -216,17 +225,40 @@ const Category = () => {
               </Select>
             </div>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Ordenar por" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Nome A-Z</SelectItem>
-                <SelectItem value="price-low">Menor preço</SelectItem>
-                <SelectItem value="price-high">Maior preço</SelectItem>
-                <SelectItem value="newest">Mais recentes</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Nome A-Z</SelectItem>
+                  <SelectItem value="price-low">Menor preço</SelectItem>
+                  <SelectItem value="price-high">Maior preço</SelectItem>
+                  <SelectItem value="newest">Mais recentes</SelectItem>
+                  <SelectItem value="most-viewed">Mais vistos</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Botões de modo de visualização */}
+              <div className="flex border rounded-md overflow-hidden">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-none border-0"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-none border-0"
+                >
+                  <LayoutList className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -243,14 +275,66 @@ const Category = () => {
               setSearchTerm('');
               setPriceRange('all');
               setSortBy('name');
+              setViewMode('grid');
             }}>
               Limpar filtros
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={
+            viewMode === 'grid' 
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+              : "flex flex-col gap-4"
+          }>
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <div key={product.id} className={viewMode === 'list' ? "w-full" : ""}>
+                {viewMode === 'list' ? (
+                  <div className="flex bg-card rounded-lg border overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="w-32 sm:w-48 h-32 sm:h-48 flex-shrink-0">
+                      <img
+                        src={product.images?.[0] || '/placeholder.svg'}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 p-4 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
+                        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                          {product.description}
+                        </p>
+                        {product.featured && (
+                          <div className="flex items-center gap-1 text-xs text-primary mb-2">
+                            <Eye className="h-3 w-3" />
+                            <span>Mais visto</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          {product.sale_price ? (
+                            <>
+                              <span className="text-sm text-muted-foreground line-through">
+                                R$ {product.price.toFixed(2)}
+                              </span>
+                              <span className="text-lg font-bold text-primary">
+                                R$ {product.sale_price.toFixed(2)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-lg font-bold">
+                              R$ {product.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        <Button size="sm">Ver Produto</Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <ProductCard product={product} />
+                )}
+              </div>
             ))}
           </div>
         )}
