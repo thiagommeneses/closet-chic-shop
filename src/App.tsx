@@ -10,6 +10,7 @@ import { Cart } from "@/components/Cart";
 import { FavoritesDrawer } from "@/components/FavoritesDrawer";
 import Index from "./pages/Index";
 import Product from "./pages/Product";
+import Category from "./pages/Category";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 import { AdminLogin } from "./pages/admin/AdminLogin";
@@ -41,6 +42,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/produto/:slug" element={<Product />} />
+              <Route path="/categoria/:slug" element={<Category />} />
               <Route path="/checkout" element={<Checkout />} />
               
               {/* Admin Routes */}

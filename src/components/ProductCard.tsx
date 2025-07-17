@@ -5,18 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import { Product } from '@/hooks/useProducts';
 
 interface ProductCardProps {
-  id: number | string;
-  name: string;
-  price: number;
+  id?: number | string;
+  name?: string;
+  price?: number;
   originalPrice?: number;
-  image: string | string[];
+  image?: string | string[];
   isNew?: boolean;
   isOnSale?: boolean;
   discount?: number;
   className?: string;
   slug?: string;
+  product?: Product;
 }
 
 export const ProductCard = ({ 
@@ -29,33 +31,56 @@ export const ProductCard = ({
   isOnSale, 
   discount,
   className = "",
-  slug
+  slug,
+  product
 }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { addItem, openCart } = useCart();
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavorites();
   
-  const imageUrl = Array.isArray(image) ? image[0] : image;
-  const isWishlisted = isFavorite(id);
+  // Use product data if provided, otherwise use individual props
+  const productId = product?.id || id;
+  const productName = product?.name || name;
+  const productPrice = product?.sale_price || product?.price || price;
+  const productOriginalPrice = product?.sale_price ? product?.price : originalPrice;
+  const productImage = product?.images?.[0] || image;
+  const productSlug = product?.slug || slug;
+  
+  const imageUrl = Array.isArray(productImage) ? productImage[0] : productImage;
+  const isWishlisted = isFavorite(productId);
+  
+  // Check if product is new (created within last 7 days)
+  const productIsNew = product ? (() => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    return new Date(product.created_at) > oneWeekAgo;
+  })() : isNew;
+  
+  // Check if product is on sale
+  const productIsOnSale = product ? (product.sale_price && product.sale_price < product.price) : isOnSale;
+  
+  // Calculate discount percentage
+  const productDiscount = product && product.sale_price && product.price ? 
+    Math.round(((product.price - product.sale_price) / product.price) * 100) : discount;
 
   const handleAddToCart = () => {
     addItem({
-      id: typeof id === 'string' ? parseInt(id) : id,
-      name,
-      price,
-      image: imageUrl
+      id: typeof productId === 'string' ? parseInt(productId) : productId!,
+      name: productName!,
+      price: productPrice!,
+      image: imageUrl!
     });
     openCart();
   };
 
   const handleToggleFavorite = () => {
     toggleFavorite({
-      id,
-      name,
-      price,
-      image: imageUrl,
-      slug
+      id: productId!,
+      name: productName!,
+      price: productPrice!,
+      image: imageUrl!,
+      slug: productSlug
     });
   };
 
@@ -74,14 +99,14 @@ export const ProductCard = ({
     >
       {/* Badges */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
-        {isNew && (
+        {productIsNew && (
           <Badge className="bg-accent text-accent-foreground">
             NOVO
           </Badge>
         )}
-        {isOnSale && discount && (
+        {productIsOnSale && productDiscount && (
           <Badge className="bg-primary text-primary-foreground">
-            -{discount}%
+            -{productDiscount}%
           </Badge>
         )}
       </div>
@@ -101,8 +126,8 @@ export const ProductCard = ({
       {/* Product Image */}
       <div className="relative aspect-[3/4] overflow-hidden">
         <img
-          src={Array.isArray(image) ? image[0] : image}
-          alt={name}
+          src={imageUrl || '/placeholder.svg'}
+          alt={productName || 'Product'}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         
@@ -125,7 +150,7 @@ export const ProductCard = ({
             variant="minimal"
             size="icon"
             className="bg-white/90 hover:bg-white"
-            onClick={() => slug && navigate(`/produto/${slug}`)}
+            onClick={() => productSlug && navigate(`/produto/${productSlug}`)}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -136,24 +161,24 @@ export const ProductCard = ({
       <div className="p-4 space-y-2">
         <h3 
           className="font-medium text-foreground group-hover:text-primary transition-colors duration-300 line-clamp-2 cursor-pointer"
-          onClick={() => slug && navigate(`/produto/${slug}`)}
+          onClick={() => productSlug && navigate(`/produto/${productSlug}`)}
         >
-          {name}
+          {productName}
         </h3>
         
         <div className="flex items-center gap-2">
           <span className="text-lg font-semibold text-primary">
-            {formatPrice(price)}
+            {formatPrice(productPrice!)}
           </span>
-          {originalPrice && originalPrice > price && (
+          {productOriginalPrice && productOriginalPrice > productPrice! && (
             <span className="text-sm text-muted-foreground line-through">
-              {formatPrice(originalPrice)}
+              {formatPrice(productOriginalPrice)}
             </span>
           )}
         </div>
 
         <div className="text-xs text-muted-foreground">
-          ou 3x de {formatPrice(price / 3)} sem juros
+          ou 3x de {formatPrice(productPrice! / 3)} sem juros
         </div>
       </div>
     </div>
