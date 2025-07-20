@@ -130,7 +130,7 @@ export default function Product() {
 
   const handleAddToCart = () => {
     addItem({
-      id: parseInt(product.id),
+      id: product.id, // Keep as string UUID, no parseInt conversion
       name: product.name,
       price: product.sale_price || product.price,
       image: currentImage,
@@ -306,7 +306,7 @@ export default function Product() {
                       onAddToCart={(size) => {
                         setSelectedSize(size);
                         addItem({
-                          id: parseInt(product.id),
+                          id: product.id,
                           name: product.name,
                           price: product.sale_price || product.price,
                           image: currentImage,

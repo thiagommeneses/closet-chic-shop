@@ -1,3 +1,4 @@
+
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';

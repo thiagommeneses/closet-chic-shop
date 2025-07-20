@@ -30,7 +30,7 @@ export const FavoritesList = ({ isOpen, onClose }: FavoritesListProps) => {
 
   const handleAddToCart = (favorite: any) => {
     addItem({
-      id: typeof favorite.id === 'string' ? parseInt(favorite.id) : favorite.id,
+      id: favorite.id as string, // Keep as string, no conversion needed
       name: favorite.name,
       price: favorite.price,
       image: favorite.image,

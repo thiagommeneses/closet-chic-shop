@@ -66,7 +66,7 @@ export const ProductCard = ({
 
   const handleAddToCart = () => {
     addItem({
-      id: typeof productId === 'string' ? parseInt(productId) : productId!,
+      id: productId as string,
       name: productName!,
       price: productPrice!,
       image: imageUrl!

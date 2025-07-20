@@ -1,11 +1,10 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -35,8 +34,8 @@ interface CartState {
 
 type CartAction =
   | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> & { quantity?: number } }
-  | { type: 'REMOVE_ITEM'; payload: number }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: string }
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'TOGGLE_CART' }
   | { type: 'OPEN_CART' }
@@ -141,8 +140,8 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 interface CartContextType {
   state: CartState;
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => Promise<void>;
-  removeItem: (id: number) => Promise<void>;
-  updateQuantity: (id: number, quantity: number) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
   completeOrder: (orderId: string) => Promise<{ success: boolean; error?: string }>;
   toggleCart: () => void;
@@ -222,7 +221,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addItem = async (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     try {
       const quantity = item.quantity || 1;
-      const productId = item.id.toString();
+      const productId = item.id;
       
       console.log(`Adding item to cart: ${item.name} (ID: ${productId}), quantity: ${quantity}`);
       
@@ -262,12 +261,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const removeItem = async (id: number) => {
+  const removeItem = async (id: string) => {
     try {
       console.log(`Removing item from cart: ${id}`);
       
       // Release the reservation before removing from cart
-      await releaseCartItem(sessionId, id.toString());
+      await releaseCartItem(sessionId, id);
       
       dispatch({ type: 'REMOVE_ITEM', payload: id });
       toast({
@@ -287,7 +286,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateQuantity = async (id: number, quantity: number) => {
+  const updateQuantity = async (id: string, quantity: number) => {
     try {
       if (quantity <= 0) {
         await removeItem(id);
@@ -297,10 +296,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log(`Updating quantity for item ${id} to ${quantity}`);
       
       // Check product availability for the new quantity
-      await checkProductAvailability(id.toString(), quantity);
+      await checkProductAvailability(id, quantity);
 
       // Update reservation with new quantity
-      await reserveCartItem(sessionId, id.toString(), quantity);
+      await reserveCartItem(sessionId, id, quantity);
       
       dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
     } catch (error) {
@@ -327,7 +326,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Release all reservations
       for (const item of state.items) {
         try {
-          await releaseCartItem(sessionId, item.id.toString());
+          await releaseCartItem(sessionId, item.id);
         } catch (error) {
           console.error(`Error releasing reservation for item ${item.id}:`, error);
         }
@@ -405,10 +404,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  console.log('useCart called, context:', context);
-  console.log('CartContext:', CartContext);
   if (context === undefined) {
-    console.error('Cart context is undefined - CartProvider may not be wrapping this component');
     throw new Error('useCart deve ser usado dentro de um CartProvider');
   }
   return context;
