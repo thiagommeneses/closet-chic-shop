@@ -131,12 +131,13 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
     }
 
     // Check for existing reservation
+    const variationId = body.variation_id === 'undefined' || body.variation_id === 'null' || !body.variation_id ? null : body.variation_id;
     const { data: existingReservation, error: existingError } = await supabase
       .from('cart_reservations')
       .select('*')
       .eq('session_id', body.session_id)
       .eq('product_id', body.product_id)
-      .eq('variation_id', body.variation_id || null)
+      .eq('variation_id', variationId)
       .maybeSingle();
 
     if (existingError) {
@@ -167,7 +168,7 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
         .insert({
           session_id: body.session_id,
           product_id: body.product_id,
-          variation_id: body.variation_id,
+          variation_id: variationId,
           quantity: body.quantity,
           expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
         });
@@ -184,7 +185,7 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
         p_product_id: body.product_id,
         p_movement_type: 'reserved',
         p_quantity: body.quantity,
-        p_variation_id: body.variation_id,
+        p_variation_id: variationId,
         p_reason: 'Cart reservation',
         p_reference_id: `cart_${body.session_id}`
       });
@@ -218,12 +219,13 @@ async function releaseCart(supabase: any, body: InventoryRequest) {
   
   try {
     // Get reservation
+    const variationId = body.variation_id === 'undefined' || body.variation_id === 'null' || !body.variation_id ? null : body.variation_id;
     const { data: reservation, error: reservationError } = await supabase
       .from('cart_reservations')
       .select('*')
       .eq('session_id', body.session_id)
       .eq('product_id', body.product_id)
-      .eq('variation_id', body.variation_id || null)
+      .eq('variation_id', variationId)
       .maybeSingle();
 
     if (reservationError) {
@@ -248,7 +250,7 @@ async function releaseCart(supabase: any, body: InventoryRequest) {
         p_product_id: body.product_id,
         p_movement_type: 'released',
         p_quantity: reservation.quantity,
-        p_variation_id: body.variation_id,
+        p_variation_id: variationId,
         p_reason: 'Cart reservation released',
         p_reference_id: `cart_release_${body.session_id}`
       });

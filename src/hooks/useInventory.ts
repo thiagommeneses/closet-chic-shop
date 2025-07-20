@@ -163,7 +163,7 @@ export const useInventory = () => {
           session_id: sessionId,
           product_id: productId,
           quantity,
-          variation_id: variationId
+          variation_id: variationId || null
         }
       });
 
