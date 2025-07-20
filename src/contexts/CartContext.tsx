@@ -405,7 +405,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useCart = () => {
   const context = useContext(CartContext);
+  console.log('useCart called, context:', context);
+  console.log('CartContext:', CartContext);
   if (context === undefined) {
+    console.error('Cart context is undefined - CartProvider may not be wrapping this component');
     throw new Error('useCart deve ser usado dentro de um CartProvider');
   }
   return context;
