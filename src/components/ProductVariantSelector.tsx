@@ -247,7 +247,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
             })}
           </div>
           
-          {!canSelect && (
+          {!canSelectAttribute(attribute.attribute_name) && (
             <p className="text-xs text-muted-foreground mt-1">
               Selecione as opções anteriores primeiro
             </p>
