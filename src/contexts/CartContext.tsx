@@ -1,6 +1,8 @@
+
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CartItem {
   id: number;
@@ -185,30 +187,85 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  // Check product availability before adding to cart
+  const checkProductAvailability = async (productId: string, requestedQuantity: number) => {
+    try {
+      console.log(`Checking availability for product ${productId}, quantity: ${requestedQuantity}`);
+      
+      const { data: product, error } = await supabase
+        .from('products')
+        .select('id, name, stock_quantity, active')
+        .eq('id', productId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching product:', error);
+        throw new Error('Produto não encontrado');
+      }
+
+      if (!product.active) {
+        throw new Error('Produto não está disponível');
+      }
+
+      const availableStock = product.stock_quantity || 0;
+      if (availableStock < requestedQuantity) {
+        throw new Error(`Estoque insuficiente. Disponível: ${availableStock}, solicitado: ${requestedQuantity}`);
+      }
+
+      return { available: true, stock: availableStock };
+    } catch (error) {
+      console.error('Error checking product availability:', error);
+      throw error;
+    }
+  };
+
   const addItem = async (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     try {
       const quantity = item.quantity || 1;
+      const productId = item.id.toString();
+      
+      console.log(`Adding item to cart: ${item.name} (ID: ${productId}), quantity: ${quantity}`);
+      
+      // Check if item already exists in cart
+      const existingItem = state.items.find(cartItem => cartItem.id === item.id);
+      const totalQuantityNeeded = existingItem ? existingItem.quantity + quantity : quantity;
+      
+      // Check product availability first
+      await checkProductAvailability(productId, totalQuantityNeeded);
       
       // Try to reserve the item in inventory
-      await reserveCartItem(sessionId, item.id.toString(), quantity);
+      await reserveCartItem(sessionId, productId, quantity);
       
       // If successful, add to cart
       dispatch({ type: 'ADD_ITEM', payload: item });
+      
       toast({
         title: 'Produto adicionado ao carrinho',
         description: `${item.name} foi adicionado com sucesso.`,
       });
     } catch (error) {
+      console.error('Error adding item to cart:', error);
+      
+      let errorMessage = 'Não foi possível adicionar o produto ao carrinho';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Erro ao adicionar produto',
-        description: error instanceof Error ? error.message : 'Não foi possível adicionar o produto ao carrinho',
+        description: errorMessage,
         variant: 'destructive'
       });
+      
+      throw error; // Re-throw so calling code can handle it
     }
   };
 
   const removeItem = async (id: number) => {
     try {
+      console.log(`Removing item from cart: ${id}`);
+      
       // Release the reservation before removing from cart
       await releaseCartItem(sessionId, id.toString());
       
@@ -218,9 +275,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         description: 'Item removido do carrinho.',
       });
     } catch (error) {
+      console.error('Erro ao liberar reserva:', error);
       // Even if reservation release fails, remove from cart
       dispatch({ type: 'REMOVE_ITEM', payload: id });
-      console.error('Erro ao liberar reserva:', error);
+      
+      toast({
+        title: 'Produto removido',
+        description: 'Item removido do carrinho (aviso: erro ao liberar reserva).',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -231,14 +294,27 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
 
+      console.log(`Updating quantity for item ${id} to ${quantity}`);
+      
+      // Check product availability for the new quantity
+      await checkProductAvailability(id.toString(), quantity);
+
       // Update reservation with new quantity
       await reserveCartItem(sessionId, id.toString(), quantity);
       
       dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
     } catch (error) {
+      console.error('Error updating quantity:', error);
+      
+      let errorMessage = 'Não foi possível atualizar a quantidade';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Erro ao atualizar quantidade',
-        description: error instanceof Error ? error.message : 'Não foi possível atualizar a quantidade',
+        description: errorMessage,
         variant: 'destructive'
       });
     }
@@ -246,9 +322,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearCart = async () => {
     try {
+      console.log('Clearing cart');
+      
       // Release all reservations
       for (const item of state.items) {
-        await releaseCartItem(sessionId, item.id.toString());
+        try {
+          await releaseCartItem(sessionId, item.id.toString());
+        } catch (error) {
+          console.error(`Error releasing reservation for item ${item.id}:`, error);
+        }
       }
       
       dispatch({ type: 'CLEAR_CART' });
@@ -257,14 +339,22 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         description: 'Todos os itens foram removidos do carrinho.',
       });
     } catch (error) {
+      console.error('Error clearing cart:', error);
       // Even if some reservations fail to release, clear the cart
       dispatch({ type: 'CLEAR_CART' });
-      console.error('Erro ao limpar reservas:', error);
+      
+      toast({
+        title: 'Carrinho limpo',
+        description: 'Carrinho limpo (aviso: erro ao liberar algumas reservas).',
+        variant: 'destructive'
+      });
     }
   };
 
   const completeOrder = async (orderId: string) => {
     try {
+      console.log(`Completing order: ${orderId}`);
+      
       await processOrder(sessionId, orderId);
       
       // Clear cart after successful order processing
@@ -276,6 +366,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       return { success: true };
     } catch (error) {
+      console.error('Error completing order:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Erro ao processar pedido' 

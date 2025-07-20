@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -92,205 +93,329 @@ async function recordMovement(supabase: any, body: InventoryRequest) {
 }
 
 async function reserveCart(supabase: any, body: InventoryRequest) {
-  // First, check if there's enough stock
-  const stockQuery = body.variation_id 
-    ? supabase.from('product_variations').select('stock_quantity').eq('id', body.variation_id)
-    : supabase.from('products').select('stock_quantity').eq('id', body.product_id);
-
-  const { data: stockData, error: stockError } = await stockQuery.single();
+  console.log(`Starting cart reservation for product ${body.product_id}, quantity: ${body.quantity}`);
   
-  if (stockError || !stockData) {
-    throw new Error("Product not found or error checking stock");
-  }
+  try {
+    // First, validate that the product exists
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .select('id, name, stock_quantity, active')
+      .eq('id', body.product_id)
+      .single();
 
-  if (stockData.stock_quantity < body.quantity) {
-    throw new Error("Insufficient stock for reservation");
-  }
+    if (productError) {
+      console.error("Error fetching product:", productError);
+      throw new Error(`Product with ID ${body.product_id} not found: ${productError.message}`);
+    }
 
-  // Check if reservation already exists for this session
-  const { data: existingReservation, error: existingError } = await supabase
-    .from('cart_reservations')
-    .select('*')
-    .eq('session_id', body.session_id)
-    .eq('product_id', body.product_id)
-    .eq('variation_id', body.variation_id || null)
-    .single();
+    if (!productData) {
+      console.error("Product not found:", body.product_id);
+      throw new Error(`Product with ID ${body.product_id} not found`);
+    }
 
-  if (existingReservation) {
-    // Update existing reservation
-    const { error: updateError } = await supabase
+    if (!productData.active) {
+      console.error("Product is not active:", body.product_id);
+      throw new Error("Product is not available");
+    }
+
+    console.log("Product found:", productData);
+
+    // Check stock availability - use product stock since we're not using variations yet
+    const availableStock = productData.stock_quantity || 0;
+    
+    console.log(`Available stock: ${availableStock}, requested: ${body.quantity}`);
+
+    if (availableStock < body.quantity) {
+      console.error(`Insufficient stock. Available: ${availableStock}, requested: ${body.quantity}`);
+      throw new Error(`Estoque insuficiente. Disponível: ${availableStock}, solicitado: ${body.quantity}`);
+    }
+
+    // Check for existing reservation
+    const { data: existingReservation, error: existingError } = await supabase
       .from('cart_reservations')
-      .update({
-        quantity: body.quantity,
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
-      })
-      .eq('id', existingReservation.id);
+      .select('*')
+      .eq('session_id', body.session_id)
+      .eq('product_id', body.product_id)
+      .eq('variation_id', body.variation_id || null)
+      .maybeSingle();
 
-    if (updateError) throw updateError;
-  } else {
-    // Create new reservation
-    const { error: insertError } = await supabase
-      .from('cart_reservations')
-      .insert({
-        session_id: body.session_id,
-        product_id: body.product_id,
-        variation_id: body.variation_id,
-        quantity: body.quantity,
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
+    if (existingError) {
+      console.error("Error checking existing reservation:", existingError);
+      throw new Error(`Error checking existing reservation: ${existingError.message}`);
+    }
+
+    if (existingReservation) {
+      console.log("Updating existing reservation:", existingReservation.id);
+      // Update existing reservation
+      const { error: updateError } = await supabase
+        .from('cart_reservations')
+        .update({
+          quantity: body.quantity,
+          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
+        })
+        .eq('id', existingReservation.id);
+
+      if (updateError) {
+        console.error("Error updating reservation:", updateError);
+        throw new Error(`Error updating reservation: ${updateError.message}`);
+      }
+    } else {
+      console.log("Creating new reservation");
+      // Create new reservation
+      const { error: insertError } = await supabase
+        .from('cart_reservations')
+        .insert({
+          session_id: body.session_id,
+          product_id: body.product_id,
+          variation_id: body.variation_id,
+          quantity: body.quantity,
+          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
+        });
+
+      if (insertError) {
+        console.error("Error creating reservation:", insertError);
+        throw new Error(`Error creating reservation: ${insertError.message}`);
+      }
+    }
+
+    // Record the stock movement for reservation tracking
+    try {
+      const { error: movementError } = await supabase.rpc('record_stock_movement', {
+        p_product_id: body.product_id,
+        p_movement_type: 'reserved',
+        p_quantity: body.quantity,
+        p_variation_id: body.variation_id,
+        p_reason: 'Cart reservation',
+        p_reference_id: `cart_${body.session_id}`
       });
 
-    if (insertError) throw insertError;
-  }
-
-  // Record the stock movement
-  const { error: movementError } = await supabase.rpc('record_stock_movement', {
-    p_product_id: body.product_id,
-    p_movement_type: 'reserved',
-    p_quantity: body.quantity,
-    p_variation_id: body.variation_id,
-    p_reason: 'Cart reservation',
-    p_reference_id: `cart_${body.session_id}`
-  });
-
-  if (movementError) throw movementError;
-
-  return new Response(
-    JSON.stringify({ success: true, message: "Stock reserved successfully" }),
-    { 
-      status: 200, 
-      headers: { "Content-Type": "application/json", ...corsHeaders }
+      if (movementError) {
+        console.error("Error recording movement (non-critical):", movementError);
+        // Don't throw here as the reservation was successful
+      }
+    } catch (movementErr) {
+      console.error("Non-critical error recording movement:", movementErr);
+      // Continue as reservation was successful
     }
-  );
-}
 
-async function releaseCart(supabase: any, body: InventoryRequest) {
-  // Get reservation
-  const { data: reservation, error: reservationError } = await supabase
-    .from('cart_reservations')
-    .select('*')
-    .eq('session_id', body.session_id)
-    .eq('product_id', body.product_id)
-    .eq('variation_id', body.variation_id || null)
-    .single();
-
-  if (reservationError || !reservation) {
+    console.log("Cart reservation completed successfully");
     return new Response(
-      JSON.stringify({ success: true, message: "No reservation found" }),
+      JSON.stringify({ success: true, message: "Stock reserved successfully" }),
       { 
         status: 200, 
         headers: { "Content-Type": "application/json", ...corsHeaders }
       }
     );
+
+  } catch (error) {
+    console.error("Error in reserveCart:", error);
+    throw error;
   }
+}
 
-  // Release the stock
-  const { error: movementError } = await supabase.rpc('record_stock_movement', {
-    p_product_id: body.product_id,
-    p_movement_type: 'released',
-    p_quantity: reservation.quantity,
-    p_variation_id: body.variation_id,
-    p_reason: 'Cart reservation released',
-    p_reference_id: `cart_release_${body.session_id}`
-  });
+async function releaseCart(supabase: any, body: InventoryRequest) {
+  console.log(`Releasing cart reservation for product ${body.product_id}, session: ${body.session_id}`);
+  
+  try {
+    // Get reservation
+    const { data: reservation, error: reservationError } = await supabase
+      .from('cart_reservations')
+      .select('*')
+      .eq('session_id', body.session_id)
+      .eq('product_id', body.product_id)
+      .eq('variation_id', body.variation_id || null)
+      .maybeSingle();
 
-  if (movementError) throw movementError;
-
-  // Delete reservation
-  const { error: deleteError } = await supabase
-    .from('cart_reservations')
-    .delete()
-    .eq('id', reservation.id);
-
-  if (deleteError) throw deleteError;
-
-  return new Response(
-    JSON.stringify({ success: true, message: "Reservation released successfully" }),
-    { 
-      status: 200, 
-      headers: { "Content-Type": "application/json", ...corsHeaders }
+    if (reservationError) {
+      console.error("Error fetching reservation:", reservationError);
+      throw new Error(`Error fetching reservation: ${reservationError.message}`);
     }
-  );
+
+    if (!reservation) {
+      console.log("No reservation found to release");
+      return new Response(
+        JSON.stringify({ success: true, message: "No reservation found" }),
+        { 
+          status: 200, 
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        }
+      );
+    }
+
+    // Release the stock movement record
+    try {
+      const { error: movementError } = await supabase.rpc('record_stock_movement', {
+        p_product_id: body.product_id,
+        p_movement_type: 'released',
+        p_quantity: reservation.quantity,
+        p_variation_id: body.variation_id,
+        p_reason: 'Cart reservation released',
+        p_reference_id: `cart_release_${body.session_id}`
+      });
+
+      if (movementError) {
+        console.error("Error recording release movement (non-critical):", movementError);
+      }
+    } catch (movementErr) {
+      console.error("Non-critical error recording release movement:", movementErr);
+    }
+
+    // Delete reservation
+    const { error: deleteError } = await supabase
+      .from('cart_reservations')
+      .delete()
+      .eq('id', reservation.id);
+
+    if (deleteError) {
+      console.error("Error deleting reservation:", deleteError);
+      throw new Error(`Error deleting reservation: ${deleteError.message}`);
+    }
+
+    console.log("Cart reservation released successfully");
+    return new Response(
+      JSON.stringify({ success: true, message: "Reservation released successfully" }),
+      { 
+        status: 200, 
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      }
+    );
+  } catch (error) {
+    console.error("Error in releaseCart:", error);
+    throw error;
+  }
 }
 
 async function processOrder(supabase: any, body: InventoryRequest) {
-  // Get all reservations for this session
-  const { data: reservations, error: reservationsError } = await supabase
-    .from('cart_reservations')
-    .select('*')
-    .eq('session_id', body.session_id);
+  console.log(`Processing order ${body.order_id} for session ${body.session_id}`);
+  
+  try {
+    // Get all reservations for this session
+    const { data: reservations, error: reservationsError } = await supabase
+      .from('cart_reservations')
+      .select('*')
+      .eq('session_id', body.session_id);
 
-  if (reservationsError) throw reservationsError;
-
-  // Process each reservation
-  for (const reservation of reservations) {
-    // Convert reservation to sale
-    const { error: saleError } = await supabase.rpc('record_stock_movement', {
-      p_product_id: reservation.product_id,
-      p_movement_type: 'out',
-      p_quantity: reservation.quantity,
-      p_variation_id: reservation.variation_id,
-      p_reason: 'Order completed',
-      p_order_id: body.order_id,
-      p_reference_id: `order_${body.order_id}`
-    });
-
-    if (saleError) {
-      console.error("Error processing order for product:", reservation.product_id, saleError);
-      // Continue processing other items
+    if (reservationsError) {
+      console.error("Error fetching reservations:", reservationsError);
+      throw new Error(`Error fetching reservations: ${reservationsError.message}`);
     }
+
+    if (!reservations || reservations.length === 0) {
+      console.log("No reservations found for session");
+      return new Response(
+        JSON.stringify({ success: true, message: "No reservations to process" }),
+        { 
+          status: 200, 
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        }
+      );
+    }
+
+    // Process each reservation
+    for (const reservation of reservations) {
+      try {
+        // Convert reservation to sale
+        const { error: saleError } = await supabase.rpc('record_stock_movement', {
+          p_product_id: reservation.product_id,
+          p_movement_type: 'out',
+          p_quantity: reservation.quantity,
+          p_variation_id: reservation.variation_id,
+          p_reason: 'Order completed',
+          p_order_id: body.order_id,
+          p_reference_id: `order_${body.order_id}`
+        });
+
+        if (saleError) {
+          console.error("Error processing order for product:", reservation.product_id, saleError);
+          // Continue processing other items
+        }
+      } catch (itemError) {
+        console.error("Error processing item:", reservation.product_id, itemError);
+        // Continue processing other items
+      }
+    }
+
+    // Delete all reservations for this session
+    const { error: deleteError } = await supabase
+      .from('cart_reservations')
+      .delete()
+      .eq('session_id', body.session_id);
+
+    if (deleteError) {
+      console.error("Error deleting reservations:", deleteError);
+      throw new Error(`Error deleting reservations: ${deleteError.message}`);
+    }
+
+    console.log("Order processed successfully");
+    return new Response(
+      JSON.stringify({ success: true, message: "Order processed successfully" }),
+      { 
+        status: 200, 
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      }
+    );
+  } catch (error) {
+    console.error("Error in processOrder:", error);
+    throw error;
   }
-
-  // Delete all reservations for this session
-  const { error: deleteError } = await supabase
-    .from('cart_reservations')
-    .delete()
-    .eq('session_id', body.session_id);
-
-  if (deleteError) throw deleteError;
-
-  return new Response(
-    JSON.stringify({ success: true, message: "Order processed successfully" }),
-    { 
-      status: 200, 
-      headers: { "Content-Type": "application/json", ...corsHeaders }
-    }
-  );
 }
 
 async function cleanupReservations(supabase: any) {
-  const { error } = await supabase.rpc('cleanup_expired_reservations');
+  console.log("Starting cleanup of expired reservations");
   
-  if (error) throw error;
-
-  return new Response(
-    JSON.stringify({ success: true, message: "Cleanup completed" }),
-    { 
-      status: 200, 
-      headers: { "Content-Type": "application/json", ...corsHeaders }
+  try {
+    const { error } = await supabase.rpc('cleanup_expired_reservations');
+    
+    if (error) {
+      console.error("Error in cleanup:", error);
+      throw new Error(`Cleanup error: ${error.message}`);
     }
-  );
+
+    console.log("Cleanup completed successfully");
+    return new Response(
+      JSON.stringify({ success: true, message: "Cleanup completed" }),
+      { 
+        status: 200, 
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      }
+    );
+  } catch (error) {
+    console.error("Error in cleanupReservations:", error);
+    throw error;
+  }
 }
 
 async function getAlerts(supabase: any) {
-  const { data, error } = await supabase
-    .from('inventory_alerts')
-    .select(`
-      *,
-      products (name, sku),
-      product_variations (variation_type, variation_value)
-    `)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
+  console.log("Fetching inventory alerts");
+  
+  try {
+    const { data, error } = await supabase
+      .from('inventory_alerts')
+      .select(`
+        *,
+        products (name, sku),
+        product_variations (variation_type, variation_value)
+      `)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-
-  return new Response(
-    JSON.stringify({ success: true, alerts: data }),
-    { 
-      status: 200, 
-      headers: { "Content-Type": "application/json", ...corsHeaders }
+    if (error) {
+      console.error("Error fetching alerts:", error);
+      throw new Error(`Error fetching alerts: ${error.message}`);
     }
-  );
+
+    console.log(`Found ${data?.length || 0} active alerts`);
+    return new Response(
+      JSON.stringify({ success: true, alerts: data }),
+      { 
+        status: 200, 
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      }
+    );
+  } catch (error) {
+    console.error("Error in getAlerts:", error);
+    throw error;
+  }
 }
 
 serve(handler);

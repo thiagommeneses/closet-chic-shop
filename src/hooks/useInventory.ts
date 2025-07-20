@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -76,6 +77,7 @@ export const useInventory = () => {
       
       setMovements(transformedData);
     } catch (err) {
+      console.error('Error fetching movements:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar movimentações');
     }
   };
@@ -86,9 +88,19 @@ export const useInventory = () => {
         body: { action: 'get_alerts' }
       });
 
-      if (error) throw error;
-      setAlerts(data.alerts || []);
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Error in response:', data.error);
+        throw new Error(data.error);
+      }
+
+      setAlerts(data?.alerts || []);
     } catch (err) {
+      console.error('Error fetching alerts:', err);
       setError(err instanceof Error ? err.message : 'Erro ao buscar alertas');
     }
   };
@@ -102,6 +114,8 @@ export const useInventory = () => {
     notes?: string
   ) => {
     try {
+      console.log('Recording movement:', { productId, movementType, quantity, variationId });
+      
       const { data, error } = await supabase.functions.invoke('inventory-management', {
         body: {
           action: 'record_movement',
@@ -115,11 +129,21 @@ export const useInventory = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Error in response:', data.error);
+        throw new Error(data.error);
+      }
+
       await fetchMovements();
       await fetchAlerts();
       return data;
     } catch (err) {
+      console.error('Error recording movement:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao registrar movimentação');
     }
   };
@@ -131,6 +155,8 @@ export const useInventory = () => {
     variationId?: string
   ) => {
     try {
+      console.log('Reserving cart item:', { sessionId, productId, quantity, variationId });
+      
       const { data, error } = await supabase.functions.invoke('inventory-management', {
         body: {
           action: 'reserve_cart',
@@ -141,10 +167,35 @@ export const useInventory = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Error in response:', data.error);
+        throw new Error(data.error);
+      }
+
       return data;
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : 'Erro ao reservar item');
+      console.error('Error reserving cart item:', err);
+      // Provide more user-friendly error messages
+      let errorMessage = 'Erro ao reservar item';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('Estoque insuficiente') || err.message.includes('Insufficient stock')) {
+          errorMessage = 'Estoque insuficiente para este produto';
+        } else if (err.message.includes('not found')) {
+          errorMessage = 'Produto não encontrado';
+        } else if (err.message.includes('not available')) {
+          errorMessage = 'Produto não disponível';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 
@@ -154,6 +205,8 @@ export const useInventory = () => {
     variationId?: string
   ) => {
     try {
+      console.log('Releasing cart item:', { sessionId, productId, variationId });
+      
       const { data, error } = await supabase.functions.invoke('inventory-management', {
         body: {
           action: 'release_cart',
@@ -163,15 +216,27 @@ export const useInventory = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Error in response:', data.error);
+        throw new Error(data.error);
+      }
+
       return data;
     } catch (err) {
+      console.error('Error releasing cart item:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao liberar item');
     }
   };
 
   const processOrder = async (sessionId: string, orderId: string) => {
     try {
+      console.log('Processing order:', { sessionId, orderId });
+      
       const { data, error } = await supabase.functions.invoke('inventory-management', {
         body: {
           action: 'process_order',
@@ -180,9 +245,19 @@ export const useInventory = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Error in response:', data.error);
+        throw new Error(data.error);
+      }
+
       return data;
     } catch (err) {
+      console.error('Error processing order:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao processar pedido');
     }
   };
@@ -200,6 +275,7 @@ export const useInventory = () => {
       if (error) throw error;
       await fetchAlerts();
     } catch (err) {
+      console.error('Error resolving alert:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao resolver alerta');
     }
   };
@@ -214,6 +290,7 @@ export const useInventory = () => {
       if (error) throw error;
       await fetchAlerts();
     } catch (err) {
+      console.error('Error ignoring alert:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro ao ignorar alerta');
     }
   };
@@ -224,9 +301,19 @@ export const useInventory = () => {
         body: { action: 'cleanup_reservations' }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Error in response:', data.error);
+        throw new Error(data.error);
+      }
+
       return data;
     } catch (err) {
+      console.error('Error in cleanup:', err);
       throw new Error(err instanceof Error ? err.message : 'Erro na limpeza');
     }
   };
@@ -234,8 +321,13 @@ export const useInventory = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchMovements(), fetchAlerts()]);
-      setLoading(false);
+      try {
+        await Promise.all([fetchMovements(), fetchAlerts()]);
+      } catch (err) {
+        console.error('Error loading initial data:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadData();
