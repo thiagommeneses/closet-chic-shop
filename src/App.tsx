@@ -34,44 +34,44 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <FavoritesProvider>
-      <CartProvider>
-        <AdminProvider>
+      <AdminProvider>
+        <CartProvider>
           <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/produto/:slug" element={<Product />} />
-              <Route path="/categoria/:slug" element={<Category />} />
-              <Route path="/checkout" element={<Checkout />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/products" element={<AdminProducts />} />
-              <Route path="/admin/products/new" element={<ProductForm />} />
-              <Route path="/admin/products/:id/edit" element={<ProductForm />} />
-              <Route path="/admin/product-templates" element={<AdminProductTemplates />} />
-              <Route path="/admin/banners" element={<AdminBanners />} />
-              <Route path="/admin/top-banner" element={<AdminTopBanner />} />
-              <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/customers" element={<AdminCustomers />} />
-              <Route path="/admin/inventory" element={<AdminInventory />} />
-          <Route path="/admin/menu" element={<AdminMenu />} />
-          <Route path="/admin/categories" element={<AdminCategories />} />
-          <Route path="/admin/tags" element={<AdminTags />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Cart />
-            <FavoritesDrawer />
-          </BrowserRouter>
-        </TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/produto/:slug" element={<Product />} />
+                <Route path="/categoria/:slug" element={<Category />} />
+                <Route path="/checkout" element={<Checkout />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/products" element={<AdminProducts />} />
+                <Route path="/admin/products/new" element={<ProductForm />} />
+                <Route path="/admin/products/:id/edit" element={<ProductForm />} />
+                <Route path="/admin/product-templates" element={<AdminProductTemplates />} />
+                <Route path="/admin/banners" element={<AdminBanners />} />
+                <Route path="/admin/top-banner" element={<AdminTopBanner />} />
+                <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/customers" element={<AdminCustomers />} />
+                <Route path="/admin/inventory" element={<AdminInventory />} />
+                <Route path="/admin/menu" element={<AdminMenu />} />
+                <Route path="/admin/categories" element={<AdminCategories />} />
+                <Route path="/admin/tags" element={<AdminTags />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
+                
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Cart />
+              <FavoritesDrawer />
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </AdminProvider>
-    </CartProvider>
     </FavoritesProvider>
   </QueryClientProvider>
 );
