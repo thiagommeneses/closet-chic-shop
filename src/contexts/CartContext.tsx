@@ -11,6 +11,7 @@ export interface CartItem {
   quantity: number;
   size?: string;
   color?: string;
+  variation_id?: string; // Add variation_id to track specific variation
 }
 
 // Generate a unique session ID for cart reservations
@@ -66,13 +67,19 @@ const initialState: CartState = loadCartFromStorage();
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const existingItem = state.items.find(item => item.id === action.payload.id);
+      // Use a combination of product ID and variation ID for unique items
+      const itemKey = `${action.payload.id}_${action.payload.variation_id || 'base'}`;
+      const existingItem = state.items.find(item => 
+        item.id === action.payload.id && 
+        (item.variation_id || 'base') === (action.payload.variation_id || 'base')
+      );
       
       if (existingItem) {
         return {
           ...state,
           items: state.items.map(item =>
-            item.id === action.payload.id
+            (item.id === action.payload.id && 
+             (item.variation_id || 'base') === (action.payload.variation_id || 'base'))
               ? { ...item, quantity: item.quantity + (action.payload.quantity || 1) }
               : item
           ),
@@ -88,24 +95,31 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'REMOVE_ITEM':
       return {
         ...state,
-        items: state.items.filter(item => item.id !== action.payload),
+        items: state.items.filter(item => {
+          const itemKey = `${item.id}_${item.variation_id || 'base'}`;
+          return itemKey !== action.payload;
+        }),
       };
     
     case 'UPDATE_QUANTITY':
       if (action.payload.quantity <= 0) {
         return {
           ...state,
-          items: state.items.filter(item => item.id !== action.payload.id),
+          items: state.items.filter(item => {
+            const itemKey = `${item.id}_${item.variation_id || 'base'}`;
+            return itemKey !== action.payload.id;
+          }),
         };
       }
       
       return {
         ...state,
-        items: state.items.map(item =>
-          item.id === action.payload.id
+        items: state.items.map(item => {
+          const itemKey = `${item.id}_${item.variation_id || 'base'}`;
+          return itemKey === action.payload.id
             ? { ...item, quantity: action.payload.quantity }
-            : item
-        ),
+            : item;
+        }),
       };
     
     case 'CLEAR_CART':
@@ -174,7 +188,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Release all reserved items when component unmounts
       for (const item of state.items) {
         try {
-          await releaseCartItem(sessionId, item.id.toString());
+          await releaseCartItem(sessionId, item.id);
         } catch (error) {
           console.error('Erro ao liberar reserva:', error);
         }
@@ -186,27 +200,63 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  // Check product availability before adding to cart
-  const checkProductAvailability = async (productId: string, requestedQuantity: number) => {
+  // Check product availability with variation support
+  const checkProductAvailability = async (productId: string, requestedQuantity: number, variationId?: string) => {
     try {
-      console.log(`Checking availability for product ${productId}, quantity: ${requestedQuantity}`);
+      console.log(`Checking availability for product ${productId}, variation: ${variationId}, quantity: ${requestedQuantity}`);
       
-      const { data: product, error } = await supabase
-        .from('products')
-        .select('id, name, stock_quantity, active')
-        .eq('id', productId)
-        .single();
+      let availableStock = 0;
+      let productData;
+      
+      if (variationId) {
+        // Check variation stock
+        const { data: variation, error: variationError } = await supabase
+          .from('product_variations')
+          .select('id, variation_type, variation_value, stock_quantity')
+          .eq('id', variationId)
+          .eq('active', true)
+          .single();
 
-      if (error) {
-        console.error('Error fetching product:', error);
-        throw new Error('Produto não encontrado');
+        if (variationError) {
+          console.error('Error fetching variation:', variationError);
+          throw new Error('Variação do produto não encontrada');
+        }
+
+        availableStock = variation.stock_quantity || 0;
+
+        // Also check if the main product is active
+        const { data: product, error: productError } = await supabase
+          .from('products')
+          .select('id, name, active')
+          .eq('id', productId)
+          .single();
+
+        if (productError || !product.active) {
+          throw new Error('Produto não está disponível');
+        }
+
+        productData = product;
+      } else {
+        // Check main product stock
+        const { data: product, error } = await supabase
+          .from('products')
+          .select('id, name, stock_quantity, active')
+          .eq('id', productId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching product:', error);
+          throw new Error('Produto não encontrado');
+        }
+
+        if (!product.active) {
+          throw new Error('Produto não está disponível');
+        }
+
+        availableStock = product.stock_quantity || 0;
+        productData = product;
       }
 
-      if (!product.active) {
-        throw new Error('Produto não está disponível');
-      }
-
-      const availableStock = product.stock_quantity || 0;
       if (availableStock < requestedQuantity) {
         throw new Error(`Estoque insuficiente. Disponível: ${availableStock}, solicitado: ${requestedQuantity}`);
       }
@@ -222,18 +272,22 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const quantity = item.quantity || 1;
       const productId = item.id;
+      const variationId = item.variation_id;
       
-      console.log(`Adding item to cart: ${item.name} (ID: ${productId}), quantity: ${quantity}`);
+      console.log(`Adding item to cart: ${item.name} (ID: ${productId}, Variation: ${variationId}), quantity: ${quantity}`);
       
-      // Check if item already exists in cart
-      const existingItem = state.items.find(cartItem => cartItem.id === item.id);
+      // Check if item already exists in cart (considering variation)
+      const existingItem = state.items.find(cartItem => 
+        cartItem.id === item.id && 
+        (cartItem.variation_id || 'base') === (item.variation_id || 'base')
+      );
       const totalQuantityNeeded = existingItem ? existingItem.quantity + quantity : quantity;
       
       // Check product availability first
-      await checkProductAvailability(productId, totalQuantityNeeded);
+      await checkProductAvailability(productId, totalQuantityNeeded, variationId);
       
       // Try to reserve the item in inventory
-      await reserveCartItem(sessionId, productId, quantity);
+      await reserveCartItem(sessionId, productId, quantity, variationId);
       
       // If successful, add to cart
       dispatch({ type: 'ADD_ITEM', payload: item });
@@ -257,18 +311,22 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         variant: 'destructive'
       });
       
-      throw error; // Re-throw so calling code can handle it
+      throw error;
     }
   };
 
-  const removeItem = async (id: string) => {
+  const removeItem = async (itemKey: string) => {
     try {
-      console.log(`Removing item from cart: ${id}`);
+      console.log(`Removing item from cart: ${itemKey}`);
+      
+      // Parse itemKey to get productId and variationId
+      const [productId, variationKey] = itemKey.split('_');
+      const variationId = variationKey === 'base' ? undefined : variationKey;
       
       // Release the reservation before removing from cart
-      await releaseCartItem(sessionId, id);
+      await releaseCartItem(sessionId, productId, variationId);
       
-      dispatch({ type: 'REMOVE_ITEM', payload: id });
+      dispatch({ type: 'REMOVE_ITEM', payload: itemKey });
       toast({
         title: 'Produto removido',
         description: 'Item removido do carrinho.',
@@ -276,7 +334,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Erro ao liberar reserva:', error);
       // Even if reservation release fails, remove from cart
-      dispatch({ type: 'REMOVE_ITEM', payload: id });
+      dispatch({ type: 'REMOVE_ITEM', payload: itemKey });
       
       toast({
         title: 'Produto removido',
@@ -286,22 +344,26 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateQuantity = async (id: string, quantity: number) => {
+  const updateQuantity = async (itemKey: string, quantity: number) => {
     try {
       if (quantity <= 0) {
-        await removeItem(id);
+        await removeItem(itemKey);
         return;
       }
 
-      console.log(`Updating quantity for item ${id} to ${quantity}`);
+      console.log(`Updating quantity for item ${itemKey} to ${quantity}`);
+      
+      // Parse itemKey to get productId and variationId
+      const [productId, variationKey] = itemKey.split('_');
+      const variationId = variationKey === 'base' ? undefined : variationKey;
       
       // Check product availability for the new quantity
-      await checkProductAvailability(id, quantity);
+      await checkProductAvailability(productId, quantity, variationId);
 
       // Update reservation with new quantity
-      await reserveCartItem(sessionId, id, quantity);
+      await reserveCartItem(sessionId, productId, quantity, variationId);
       
-      dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+      dispatch({ type: 'UPDATE_QUANTITY', payload: { id: itemKey, quantity } });
     } catch (error) {
       console.error('Error updating quantity:', error);
       
@@ -326,7 +388,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Release all reservations
       for (const item of state.items) {
         try {
-          await releaseCartItem(sessionId, item.id);
+          await releaseCartItem(sessionId, item.id, item.variation_id);
         } catch (error) {
           console.error(`Error releasing reservation for item ${item.id}:`, error);
         }

@@ -62,54 +62,69 @@ export const Cart = () => {
             <>
               {/* Cart Items */}
               <div className="flex-1 overflow-y-auto space-y-4 py-6 min-h-0">
-                {state.items.map((item) => (
-                  <div key={item.id} className="flex gap-3 p-3 border border-border rounded-lg">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-16 h-20 object-cover rounded"
-                    />
-                    
-                    <div className="flex-1 space-y-2">
-                      <h4 className="font-medium text-sm line-clamp-2">{item.name}</h4>
-                      <p className="text-primary font-semibold">
-                        {formatPrice(item.price)}
-                      </p>
+                {state.items.map((item) => {
+                  // Create unique key for each item (product + variation)
+                  const itemKey = `${item.id}_${item.variation_id || 'base'}`;
+                  
+                  return (
+                    <div key={itemKey} className="flex gap-3 p-3 border border-border rounded-lg">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-16 h-20 object-cover rounded"
+                      />
                       
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 space-y-2">
+                        <h4 className="font-medium text-sm line-clamp-2">{item.name}</h4>
+                        
+                        {/* Show variation details */}
+                        {(item.size || item.color) && (
+                          <div className="text-xs text-muted-foreground">
+                            {item.size && <span>Tamanho: {item.size}</span>}
+                            {item.size && item.color && <span> • </span>}
+                            {item.color && <span>Cor: {item.color}</span>}
+                          </div>
+                        )}
+                        
+                        <p className="text-primary font-semibold">
+                          {formatPrice(item.price)}
+                        </p>
+                        
+                        {/* Quantity Controls */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(itemKey, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center text-sm">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => updateQuantity(itemKey, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => removeItem(itemKey)}
                           >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => removeItem(item.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Cart Summary */}

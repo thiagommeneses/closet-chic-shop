@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -93,9 +92,17 @@ async function recordMovement(supabase: any, body: InventoryRequest) {
 }
 
 async function reserveCart(supabase: any, body: InventoryRequest) {
-  console.log(`Starting cart reservation for product ${body.product_id}, quantity: ${body.quantity}`);
+  console.log(`Starting cart reservation for product ${body.product_id}, variation: ${body.variation_id}, quantity: ${body.quantity}`);
   
   try {
+    // Clean up variation_id - ensure it's null if undefined/null string
+    const variationId = body.variation_id === 'undefined' || 
+                       body.variation_id === 'null' || 
+                       !body.variation_id || 
+                       body.variation_id.trim() === '' ? null : body.variation_id;
+
+    console.log(`Cleaned variation_id: ${variationId}`);
+
     // First, validate that the product exists
     const { data: productData, error: productError } = await supabase
       .from('products')
@@ -120,10 +127,44 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
 
     console.log("Product found:", productData);
 
-    // Check stock availability - use product stock since we're not using variations yet
-    const availableStock = productData.stock_quantity || 0;
+    let availableStock = 0;
+    let stockSource = 'product';
+
+    if (variationId) {
+      // Check variation stock
+      console.log(`Checking variation stock for ID: ${variationId}`);
+      
+      const { data: variationData, error: variationError } = await supabase
+        .from('product_variations')
+        .select('id, variation_type, variation_value, stock_quantity, active')
+        .eq('id', variationId)
+        .eq('product_id', body.product_id)
+        .single();
+
+      if (variationError) {
+        console.error("Error fetching variation:", variationError);
+        throw new Error(`Variation with ID ${variationId} not found: ${variationError.message}`);
+      }
+
+      if (!variationData) {
+        console.error("Variation not found:", variationId);
+        throw new Error(`Variation with ID ${variationId} not found`);
+      }
+
+      if (!variationData.active) {
+        console.error("Variation is not active:", variationId);
+        throw new Error("Variation is not available");
+      }
+
+      availableStock = variationData.stock_quantity || 0;
+      stockSource = 'variation';
+      console.log("Variation found:", variationData);
+    } else {
+      // Use product stock
+      availableStock = productData.stock_quantity || 0;
+    }
     
-    console.log(`Available stock: ${availableStock}, requested: ${body.quantity}`);
+    console.log(`Available stock (${stockSource}): ${availableStock}, requested: ${body.quantity}`);
 
     if (availableStock < body.quantity) {
       console.error(`Insufficient stock. Available: ${availableStock}, requested: ${body.quantity}`);
@@ -131,7 +172,6 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
     }
 
     // Check for existing reservation
-    const variationId = body.variation_id === 'undefined' || body.variation_id === 'null' || !body.variation_id ? null : body.variation_id;
     const { data: existingReservation, error: existingError } = await supabase
       .from('cart_reservations')
       .select('*')
@@ -215,11 +255,18 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
 }
 
 async function releaseCart(supabase: any, body: InventoryRequest) {
-  console.log(`Releasing cart reservation for product ${body.product_id}, session: ${body.session_id}`);
+  console.log(`Releasing cart reservation for product ${body.product_id}, session: ${body.session_id}, variation: ${body.variation_id}`);
   
   try {
+    // Clean up variation_id
+    const variationId = body.variation_id === 'undefined' || 
+                       body.variation_id === 'null' || 
+                       !body.variation_id || 
+                       body.variation_id.trim() === '' ? null : body.variation_id;
+
+    console.log(`Cleaned variation_id for release: ${variationId}`);
+
     // Get reservation
-    const variationId = body.variation_id === 'undefined' || body.variation_id === 'null' || !body.variation_id ? null : body.variation_id;
     const { data: reservation, error: reservationError } = await supabase
       .from('cart_reservations')
       .select('*')

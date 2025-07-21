@@ -47,6 +47,7 @@ export default function Product() {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
+  const [selectedVariationId, setSelectedVariationId] = useState('');
   const [variations, setVariations] = useState<any[]>([]);
   const [productDetails, setProductDetails] = useState<any>({});
   const [selectedShipping, setSelectedShipping] = useState<any>(null);
@@ -68,7 +69,7 @@ export default function Product() {
 
   const loadProductData = async (productId: string) => {
     try {
-      // Load variations
+      // Load variations from product_variations table
       const { data: variationsData } = await supabase
         .from('product_variations')
         .select('*')
@@ -91,6 +92,7 @@ export default function Product() {
 
       if (variationsData) {
         setVariations(variationsData);
+        console.log('Loaded variations:', variationsData);
       }
 
       if (detailsData) {
@@ -104,6 +106,75 @@ export default function Product() {
     } catch (error) {
       console.error('Error loading product data:', error);
     }
+  };
+
+  // Handle size selection and find matching variation
+  const handleSizeSelection = (size: string) => {
+    setSelectedSize(size);
+    
+    // Find the variation that matches the selected size
+    const sizeVariation = variations.find(v => 
+      v.variation_type === 'size' && v.variation_value === size
+    );
+    
+    if (sizeVariation) {
+      setSelectedVariationId(sizeVariation.id);
+      console.log('Selected variation:', sizeVariation);
+    }
+  };
+
+  // Handle color selection
+  const handleColorSelection = (color: string) => {
+    setSelectedColor(color);
+    
+    // If there are both size and color variations, we need more complex logic
+    // For now, just find color variation
+    const colorVariation = variations.find(v => 
+      v.variation_type === 'color' && v.variation_value === color
+    );
+    
+    if (colorVariation) {
+      setSelectedVariationId(colorVariation.id);
+      console.log('Selected color variation:', colorVariation);
+    }
+  };
+
+  // Check if we can add to cart
+  const canAddToCart = () => {
+    const hasVariations = variations.length > 0;
+    
+    if (!hasVariations) {
+      return (product?.stock_quantity || 0) > 0;
+    }
+    
+    // If product has variations, user must select them
+    const hasSizeVariations = variations.some(v => v.variation_type === 'size');
+    const hasColorVariations = variations.some(v => v.variation_type === 'color');
+    
+    if (hasSizeVariations && !selectedSize) {
+      return false;
+    }
+    
+    if (hasColorVariations && !selectedColor) {
+      return false;
+    }
+    
+    // Check if selected variation has stock
+    if (selectedVariationId) {
+      const selectedVariation = variations.find(v => v.id === selectedVariationId);
+      return (selectedVariation?.stock_quantity || 0) > 0;
+    }
+    
+    return false;
+  };
+
+  // Get available stock for display
+  const getAvailableStock = () => {
+    if (selectedVariationId) {
+      const selectedVariation = variations.find(v => v.id === selectedVariationId);
+      return selectedVariation?.stock_quantity || 0;
+    }
+    return product?.stock_quantity || 0;
   };
 
   if (loading) {
@@ -129,12 +200,26 @@ export default function Product() {
   };
 
   const handleAddToCart = () => {
+    if (!canAddToCart()) {
+      if (variations.length > 0) {
+        const hasSizeVariations = variations.some(v => v.variation_type === 'size');
+        if (hasSizeVariations && !selectedSize) {
+          alert('Por favor, selecione um tamanho antes de adicionar ao carrinho.');
+          return;
+        }
+      }
+      return;
+    }
+
     addItem({
-      id: product.id, // Keep as string UUID, no parseInt conversion
+      id: product.id,
       name: product.name,
       price: product.sale_price || product.price,
       image: currentImage,
-      quantity
+      quantity,
+      size: selectedSize || undefined,
+      color: selectedColor || undefined,
+      variation_id: selectedVariationId || undefined
     });
     openCart();
   };
@@ -155,6 +240,8 @@ export default function Product() {
   const discountPercentage = hasDiscount 
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
+
+  const availableStock = getAvailableStock();
 
   return (
     <div className="min-h-screen bg-background">
@@ -259,10 +346,10 @@ export default function Product() {
                   </p>
                 )}
                 <div className="flex items-center">
-                  {(product.stock_quantity || 0) > 0 ? (
+                  {availableStock > 0 ? (
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-medium text-green-700">Em estoque</span>
+                      <span className="text-sm font-medium text-green-700">Em estoque ({availableStock} unidades)</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -295,25 +382,21 @@ export default function Product() {
             {variations.filter(v => v.variation_type === 'size' && v.active !== false).length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">TAMANHO</label>
+                  <label className="text-sm font-medium">
+                    TAMANHO {!selectedSize && <span className="text-red-500">*</span>}
+                  </label>
                   {productDetails.size_guide && (
                     <ProductSizeGuide
                       sizeGuideContent={renderTemplateContent(productDetails.size_guide)}
                       productName={product.name}
                       productImage={currentImage}
                       selectedSize={selectedSize}
-                      onSizeSelect={setSelectedSize}
+                      onSizeSelect={handleSizeSelection}
                       onAddToCart={(size) => {
-                        setSelectedSize(size);
-                        addItem({
-                          id: product.id,
-                          name: product.name,
-                          price: product.sale_price || product.price,
-                          image: currentImage,
-                          size: size,
-                          quantity: 1
-                        });
-                        openCart();
+                        handleSizeSelection(size);
+                        if (canAddToCart()) {
+                          handleAddToCart();
+                        }
                       }}
                       price={product.sale_price || product.price}
                       productId={product.id}
@@ -329,14 +412,20 @@ export default function Product() {
                         key={variation.id}
                         variant={selectedSize === variation.variation_value ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setSelectedSize(variation.variation_value)}
+                        onClick={() => handleSizeSelection(variation.variation_value)}
                         className="w-12 h-12"
                         disabled={variation.stock_quantity === 0}
                       >
                         {variation.variation_value}
+                        {variation.stock_quantity === 0 && (
+                          <span className="sr-only">Esgotado</span>
+                        )}
                       </Button>
                     ))}
                 </div>
+                {!selectedSize && variations.some(v => v.variation_type === 'size') && (
+                  <p className="text-sm text-red-500">Selecione um tamanho para continuar</p>
+                )}
               </div>
             )}
 
@@ -352,11 +441,14 @@ export default function Product() {
                         key={variation.id}
                         variant={selectedColor === variation.variation_value ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setSelectedColor(variation.variation_value)}
+                        onClick={() => handleColorSelection(variation.variation_value)}
                         className="min-w-16 h-10"
                         disabled={variation.stock_quantity === 0}
                       >
                         {variation.variation_value}
+                        {variation.stock_quantity === 0 && (
+                          <span className="ml-1 text-xs text-muted-foreground">(Esgotado)</span>
+                        )}
                       </Button>
                     ))}
                 </div>
@@ -461,10 +553,10 @@ export default function Product() {
             </Accordion>
 
             {/* Stock Alert */}
-            {(product.stock_quantity || 0) <= 5 && (product.stock_quantity || 0) > 0 && (
+            {availableStock <= 5 && availableStock > 0 && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <p className="text-sm font-medium text-orange-800">
-                  ÚLTIMAS {product.stock_quantity} UNIDADES DISPONÍVEIS
+                  ÚLTIMAS {availableStock} UNIDADES DISPONÍVEIS
                 </p>
               </div>
             )}
@@ -484,7 +576,7 @@ export default function Product() {
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(quantity + 1)}
-                disabled={quantity >= (product.stock_quantity || 100)}
+                disabled={quantity >= availableStock}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -496,9 +588,11 @@ export default function Product() {
                 size="lg"
                 className="w-full bg-primary hover:bg-primary/90"
                 onClick={handleAddToCart}
-                disabled={(product.stock_quantity || 0) <= 0}
+                disabled={!canAddToCart()}
               >
-                {(product.stock_quantity || 0) <= 0 ? 'FORA DE ESTOQUE' : 'ADICIONAR AO CARRINHO'}
+                {availableStock <= 0 ? 'FORA DE ESTOQUE' : 
+                 !canAddToCart() && variations.length > 0 ? 'SELECIONE AS OPÇÕES' :
+                 'ADICIONAR AO CARRINHO'}
               </Button>
             </div>
 
