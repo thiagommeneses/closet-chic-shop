@@ -64,15 +64,24 @@ export const ProductCard = ({
   const productDiscount = product && product.sale_price && product.price ? 
     Math.round(((product.price - product.sale_price) / product.price) * 100) : discount;
 
+  // Check if product has variations
+  const productHasVariations = product?.has_variations;
+
   const handleAddToCart = () => {
-    addItem({
-      id: productId as string,
-      name: productName!,
-      price: productPrice!,
-      image: imageUrl!,
-      variation_id: undefined // Explicitly set to undefined for products without variations
-    });
-    openCart();
+    if (productHasVariations) {
+      // Redirect to product page for products with variations
+      navigate(`/produto/${productSlug}`);
+    } else {
+      // Add directly to cart for products without variations
+      addItem({
+        id: productId as string,
+        name: productName!,
+        price: productPrice!,
+        image: imageUrl!,
+        variation_id: undefined
+      });
+      openCart();
+    }
   };
 
   const handleToggleFavorite = () => {
@@ -110,6 +119,11 @@ export const ProductCard = ({
             -{productDiscount}%
           </Badge>
         )}
+        {productHasVariations && (
+          <Badge variant="secondary" className="text-xs">
+            Várias opções
+          </Badge>
+        )}
       </div>
 
       {/* Wishlist Button */}
@@ -145,7 +159,7 @@ export const ProductCard = ({
             onClick={handleAddToCart}
           >
             <ShoppingBag className="h-4 w-4 mr-2" />
-            Comprar
+            {productHasVariations ? 'Ver Opções' : 'Comprar'}
           </Button>
           <Button
             variant="minimal"

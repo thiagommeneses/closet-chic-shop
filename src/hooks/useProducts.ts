@@ -20,6 +20,7 @@ export interface Product {
   length_cm?: number;
   width_cm?: number;
   height_cm?: number;
+  has_variations?: boolean;
 }
 
 export const useProducts = () => {
@@ -30,17 +31,40 @@ export const useProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // First get all products
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
         .eq('active', true)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
+      if (productsError) {
+        throw productsError;
       }
 
-      setProducts(data || []);
+      // Get products with variations
+      const { data: variationsData, error: variationsError } = await supabase
+        .from('product_variations')
+        .select('product_id')
+        .eq('active', true);
+
+      if (variationsError) {
+        throw variationsError;
+      }
+
+      // Create a set of product IDs that have variations
+      const productsWithVariations = new Set(
+        variationsData?.map(v => v.product_id) || []
+      );
+
+      // Process products to add has_variations flag
+      const processedProducts = (productsData || []).map(product => ({
+        ...product,
+        has_variations: productsWithVariations.has(product.id)
+      }));
+
+      setProducts(processedProducts);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao buscar produtos');
     } finally {
