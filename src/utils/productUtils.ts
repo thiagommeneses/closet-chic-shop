@@ -10,6 +10,7 @@ export interface ProductCardData {
   isOnSale?: boolean;
   discount?: number;
   slug?: string;
+  has_variations?: boolean;
 }
 
 export const mapProductToCardData = (product: Product): ProductCardData => {
@@ -32,6 +33,7 @@ export const mapProductToCardData = (product: Product): ProductCardData => {
     isNew,
     isOnSale: !!isOnSale,
     discount,
-    slug: product.slug
+    slug: product.slug,
+    has_variations: product.has_variations
   };
 };
