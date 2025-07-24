@@ -69,7 +69,8 @@ export const ProductCard = ({
       id: productId as string,
       name: productName!,
       price: productPrice!,
-      image: imageUrl!
+      image: imageUrl!,
+      variation_id: undefined // Explicitly set to undefined for products without variations
     });
     openCart();
   };

@@ -172,13 +172,19 @@ async function reserveCart(supabase: any, body: InventoryRequest) {
     }
 
     // Check for existing reservation
-    const { data: existingReservation, error: existingError } = await supabase
+    let query = supabase
       .from('cart_reservations')
       .select('*')
       .eq('session_id', body.session_id)
-      .eq('product_id', body.product_id)
-      .eq('variation_id', variationId)
-      .maybeSingle();
+      .eq('product_id', body.product_id);
+    
+    if (variationId) {
+      query = query.eq('variation_id', variationId);
+    } else {
+      query = query.is('variation_id', null);
+    }
+    
+    const { data: existingReservation, error: existingError } = await query.maybeSingle();
 
     if (existingError) {
       console.error("Error checking existing reservation:", existingError);
@@ -267,13 +273,19 @@ async function releaseCart(supabase: any, body: InventoryRequest) {
     console.log(`Cleaned variation_id for release: ${variationId}`);
 
     // Get reservation
-    const { data: reservation, error: reservationError } = await supabase
+    let releaseQuery = supabase
       .from('cart_reservations')
       .select('*')
       .eq('session_id', body.session_id)
-      .eq('product_id', body.product_id)
-      .eq('variation_id', variationId)
-      .maybeSingle();
+      .eq('product_id', body.product_id);
+      
+    if (variationId) {
+      releaseQuery = releaseQuery.eq('variation_id', variationId);
+    } else {
+      releaseQuery = releaseQuery.is('variation_id', null);
+    }
+    
+    const { data: reservation, error: reservationError } = await releaseQuery.maybeSingle();
 
     if (reservationError) {
       console.error("Error fetching reservation:", reservationError);
